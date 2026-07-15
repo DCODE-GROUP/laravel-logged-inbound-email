@@ -49,6 +49,8 @@
     "scripts": {
         "test": "phpunit",
         "analyse": "phpstan analyse",
+        "lint": "pint --test",
+        "format:check": "@lint",
         "format": "pint"
     },
     "config": {
