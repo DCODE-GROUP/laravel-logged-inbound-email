@@ -8,6 +8,7 @@ use Touqeershafi\LaravelInboundEmail\Contracts\InboundWebhookHandler;
 use Touqeershafi\LaravelInboundEmail\Handlers\MailgunHandler;
 use Touqeershafi\LaravelInboundEmail\Handlers\MailpitHandler;
 use Touqeershafi\LaravelInboundEmail\Handlers\PostmarkHandler;
+use Touqeershafi\LaravelInboundEmail\Handlers\ResendHandler;
 use Touqeershafi\LaravelInboundEmail\Handlers\SendGridHandler;
 use Touqeershafi\LaravelInboundEmail\Handlers\SesSnsHandler;
 
@@ -19,6 +20,7 @@ class InboundWebhookHandlerFactory
         'sendgrid',
         'ses',
         'mailpit',
+        'resend',
     ];
 
     public function __construct(
@@ -37,6 +39,7 @@ class InboundWebhookHandlerFactory
             'sendgrid' => $this->app->make(SendGridHandler::class),
             'ses' => $this->app->make(SesSnsHandler::class),
             'mailpit' => $this->app->make(MailpitHandler::class),
+            'resend' => $this->app->make(ResendHandler::class),
         };
     }
 }

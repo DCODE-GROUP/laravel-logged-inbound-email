@@ -92,6 +92,12 @@ return [
             'api_token' => env('INBOUND_EMAIL_MAILPIT_API_TOKEN'),
             'webhook_secret' => env('INBOUND_EMAIL_MAILPIT_WEBHOOK_SECRET'),
         ],
+
+        'resend' => [
+            'webhook_secret' => env('INBOUND_EMAIL_RESEND_WEBHOOK_SECRET'),
+            'api_key' => env('INBOUND_EMAIL_RESEND_API_KEY'),
+            'api_base_url' => env('INBOUND_EMAIL_RESEND_API_BASE_URL', 'https://api.resend.com'),
+        ],
     ],
 
 ];

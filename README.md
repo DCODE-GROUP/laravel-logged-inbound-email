@@ -2,7 +2,7 @@
 
 Multi-provider inbound email webhooks for Laravel. Incoming HTTP requests are verified per provider, normalized into an `InboundMessage` DTO, and handled asynchronously via **one** queued job class you configure.
 
-**Supported providers:** Mailgun, Postmark, SendGrid, Amazon SES (via SNS), Mailpit.
+**Supported providers:** Mailgun, Postmark, SendGrid, Amazon SES (via SNS), Mailpit, Resend.
 
 **Requirements:** PHP `^8.4`, Laravel `10.x`+ (Illuminate `^10`–`^13` per `composer.json`).
 
@@ -47,6 +47,7 @@ Examples (default prefix):
 | SendGrid  | `POST /webhooks/inbound/sendgrid`   |
 | SES (SNS) | `POST /webhooks/inbound/ses`        |
 | Mailpit   | `POST /webhooks/inbound/mailpit`    |
+| Resend    | `POST /webhooks/inbound/resend`     |
 
 ### Multi-tenant / SaaS
 
@@ -87,6 +88,7 @@ Provider secrets and options (set only what you use):
 | `INBOUND_EMAIL_SENDGRID_VERIFICATION_KEY` | SendGrid |
 | `INBOUND_EMAIL_SES_ALLOW_UNSIGNED_SNS`, `INBOUND_EMAIL_SES_S3_DISK` | SES |
 | `INBOUND_EMAIL_MAILPIT_BASE_URL`, `INBOUND_EMAIL_MAILPIT_API_TOKEN`, `INBOUND_EMAIL_MAILPIT_WEBHOOK_SECRET` | Mailpit |
+| `INBOUND_EMAIL_RESEND_WEBHOOK_SECRET`, `INBOUND_EMAIL_RESEND_API_KEY`, `INBOUND_EMAIL_RESEND_API_BASE_URL` | Resend |
 
 Full keys and comments live in the published `config/inbound-email.php`.
 
