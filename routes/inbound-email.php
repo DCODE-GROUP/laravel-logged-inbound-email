@@ -9,8 +9,8 @@ $orgPattern = (string) config('inbound-email.organization_alias_pattern', '[a-zA
 if ($orgInRoute) {
     Route::post('{orgAlias}/{provider}', [InboundWebhookController::class, 'handleForOrganization'])
         ->where('orgAlias', $orgPattern)
-        ->whereIn('provider', ['mailgun', 'postmark', 'sendgrid', 'ses', 'mailpit']);
+        ->whereIn('provider', ['mailgun', 'postmark', 'sendgrid', 'ses', 'mailpit', 'resend']);
 } else {
     Route::post('{provider}', [InboundWebhookController::class, 'handle'])
-        ->whereIn('provider', ['mailgun', 'postmark', 'sendgrid', 'ses', 'mailpit']);
+        ->whereIn('provider', ['mailgun', 'postmark', 'sendgrid', 'ses', 'mailpit', 'resend']);
 }
