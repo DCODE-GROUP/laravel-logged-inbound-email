@@ -1,8 +1,8 @@
 <?php
 
-namespace Touqeershafi\LaravelInboundEmail\Support;
+namespace Dcodegroup\LaravelLoggedInboundEmail\Support;
 
-use Touqeershafi\LaravelInboundEmail\Contracts\InboundProviderConfigResolver;
+use Dcodegroup\LaravelLoggedInboundEmail\Contracts\InboundProviderConfigResolver;
 
 class NullInboundProviderConfigResolver implements InboundProviderConfigResolver
 {

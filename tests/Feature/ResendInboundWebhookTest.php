@@ -1,11 +1,13 @@
 <?php
 
-namespace Touqeershafi\LaravelInboundEmail\Tests\Feature;
+namespace Dcodegroup\LaravelLoggedInboundEmail\Tests\Feature;
 
+use Dcodegroup\LaravelLoggedInboundEmail\Enums\InboundEmailStatus;
+use Dcodegroup\LaravelLoggedInboundEmail\Jobs\DefaultProcessInboundEmailJob;
+use Dcodegroup\LaravelLoggedInboundEmail\Models\InboundEmail;
+use Dcodegroup\LaravelLoggedInboundEmail\Tests\TestCase;
 use Illuminate\Support\Facades\Bus;
 use Illuminate\Support\Facades\Http;
-use Touqeershafi\LaravelInboundEmail\Jobs\DefaultProcessInboundEmailJob;
-use Touqeershafi\LaravelInboundEmail\Tests\TestCase;
 
 class ResendInboundWebhookTest extends TestCase
 {
@@ -47,6 +49,7 @@ class ResendInboundWebhookTest extends TestCase
             ->assertForbidden();
 
         Bus::assertNothingDispatched();
+        self::assertSame(0, InboundEmail::count());
     }
 
     public function test_rejects_invalid_signature(): void
@@ -60,6 +63,7 @@ class ResendInboundWebhookTest extends TestCase
             ->assertForbidden();
 
         Bus::assertNothingDispatched();
+        self::assertSame(0, InboundEmail::count());
     }
 
     public function test_acknowledges_non_email_received_events_without_dispatching_job(): void
@@ -76,6 +80,7 @@ class ResendInboundWebhookTest extends TestCase
             ->assertOk();
 
         Bus::assertNothingDispatched();
+        self::assertSame(0, InboundEmail::count());
     }
 
     public function test_fetches_email_from_api_and_dispatches_job(): void
@@ -113,6 +118,17 @@ class ResendInboundWebhookTest extends TestCase
                 && ($m['html'] ?? null) === '<p>HTML body</p>'
                 && ($m['metadata']['resend_email_id'] ?? null) === 'email-uuid-1';
         });
+
+        self::assertSame(1, InboundEmail::count());
+
+        $inboundEmail = InboundEmail::sole();
+        self::assertSame(InboundEmailStatus::Received, $inboundEmail->status);
+        self::assertSame($signed['body'], $inboundEmail->payload);
+        self::assertSame('resend', $inboundEmail->provider);
+        self::assertSame('Resend subject', $inboundEmail->subject);
+        self::assertSame('Plain text body', $inboundEmail->text_content);
+        self::assertSame('<p>HTML body</p>', $inboundEmail->html_content);
+        self::assertSame('<msg@example.com>', $inboundEmail->message_id);
     }
 
     public function test_fetches_attachments_via_api(): void
@@ -175,5 +191,9 @@ class ResendInboundWebhookTest extends TestCase
             ->assertBadRequest();
 
         Bus::assertNothingDispatched();
+
+        $inboundEmail = InboundEmail::sole();
+        self::assertSame(InboundEmailStatus::Failed, $inboundEmail->status);
+        self::assertNotEmpty($inboundEmail->error);
     }
 }

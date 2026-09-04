@@ -1,6 +1,6 @@
 <?php
 
-use Touqeershafi\LaravelInboundEmail\Jobs\DefaultProcessInboundEmailJob;
+use Dcodegroup\LaravelLoggedInboundEmail\Jobs\DefaultProcessInboundEmailJob;
 
 return [
 
@@ -39,6 +39,21 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Tenant model
+    |--------------------------------------------------------------------------
+    |
+    | Fully-qualified class name of your own tenant model. Declared here so
+    | there is a single, unambiguous model class that InboundEmail::tenant_id
+    | refers to. The package never resolves or sets tenant_id itself — you
+    | are responsible for populating it on the InboundEmail row after it
+    | exists (e.g. from organization_alias, or however your app maps
+    | webhooks to tenants).
+    |
+    */
+    'tenant_model' => env('INBOUND_EMAIL_TENANT_MODEL'),
+
+    /*
+    |--------------------------------------------------------------------------
     | Route middleware
     |--------------------------------------------------------------------------
     */
@@ -62,6 +77,20 @@ return [
     */
     'queue_connection' => env('INBOUND_EMAIL_QUEUE_CONNECTION'),
     'queue' => env('INBOUND_EMAIL_QUEUE'),
+
+    /*
+    |--------------------------------------------------------------------------
+    | Attachments
+    |--------------------------------------------------------------------------
+    |
+    | Attachments extracted from InboundMessage are written to this filesystem
+    | disk, and one InboundEmailAttachment row is created per file. Defaults
+    | to the application's default disk.
+    |
+    */
+    'attachments' => [
+        'disk' => env('INBOUND_EMAIL_ATTACHMENTS_DISK', config('filesystems.default')),
+    ],
 
     /*
     |--------------------------------------------------------------------------

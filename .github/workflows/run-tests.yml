@@ -1,0 +1,54 @@
+name: run-tests
+
+on:
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: run-tests-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    runs-on: self-hosted
+
+    strategy:
+      fail-fast: true
+      matrix:
+        laravel: ["11.*", "12.*", "13.*"]
+        php: ['8.4', "8.5"]
+        include:
+          - laravel: "11.*"
+            testbench: "9.*"
+          - laravel: "12.*"
+            testbench: "10.*"
+          - laravel: "13.*"
+            testbench: "11.*"
+
+    name: PHP ${{ matrix.php }} - Laravel ${{ matrix.laravel }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ matrix.php }}
+          tools: composer:v2
+          coverage: none
+
+      - name: Setup problem matchers
+        run: |
+          echo "::add-matcher::${{ runner.tool_cache }}/php.json"
+          echo "::add-matcher::${{ runner.tool_cache }}/phpunit.json"
+
+      - name: Install dependencies
+        run: |
+          composer require "laravel/framework:${{ matrix.laravel }}" "orchestra/testbench:${{ matrix.testbench }}" --no-interaction --no-update
+          composer update --prefer-stable --prefer-dist --no-interaction
+
+      - name: Execute tests
+        run: composer test
