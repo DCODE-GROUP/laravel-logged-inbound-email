@@ -33,9 +33,10 @@ class OrganizationInboundWebhookTest extends TestCase
                 && ($job->message['subject'] ?? null) === 'Hello';
         });
 
-        // organization_alias is out of scope for this ticket (a later ticket
-        // adds the column); the row is still recorded as normal.
-        self::assertSame(1, InboundEmail::count());
+        $inboundEmail = InboundEmail::sole();
+
+        self::assertSame('acme-corp', $inboundEmail->organization_alias);
+        self::assertNull($inboundEmail->tenant_id);
     }
 
     public function test_unknown_provider_returns_404(): void

@@ -27,6 +27,8 @@ use Illuminate\Support\Carbon;
  * @property Carbon|null $received_at
  * @property InboundEmailStatus $status
  * @property string|null $error
+ * @property string|null $organization_alias
+ * @property int|null $tenant_id
  */
 class InboundEmail extends Model
 {

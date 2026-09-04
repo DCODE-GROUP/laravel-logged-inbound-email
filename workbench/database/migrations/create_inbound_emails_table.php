@@ -25,6 +25,9 @@ return new class extends Migration
             $table->string('message_id')->nullable();
             $table->timestamp('received_at')->nullable();
 
+            $table->string('organization_alias')->nullable();
+            $table->unsignedBigInteger('tenant_id')->nullable();
+
             $table->string('status');
             $table->text('error')->nullable();
 
@@ -32,6 +35,8 @@ return new class extends Migration
 
             $table->index('status');
             $table->index('message_id');
+            $table->index('organization_alias');
+            $table->index('tenant_id');
         });
     }
 

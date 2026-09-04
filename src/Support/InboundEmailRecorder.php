@@ -33,11 +33,16 @@ class InboundEmailRecorder
      * SubscriptionConfirmation) — in which case no InboundEmail row is left
      * behind at all.
      *
+     * The given $organizationAlias should already be resolved by the caller
+     * to null unless multi-tenant routing (`organization_in_route`) is
+     * enabled and the `{orgAlias}` route segment was present; this method
+     * simply stores whatever it is given.
+     *
      * @throws Throwable re-thrown after marking the row Failed
      */
-    public function record(Request $request, string $provider, InboundWebhookHandler $handler): ?InboundMessage
+    public function record(Request $request, string $provider, InboundWebhookHandler $handler, ?string $organizationAlias = null): ?InboundMessage
     {
-        $inboundEmail = $this->createPending($request, $provider);
+        $inboundEmail = $this->createPending($request, $provider, $organizationAlias);
 
         $inboundEmail->update(['status' => InboundEmailStatus::Receiving]);
 
@@ -63,11 +68,12 @@ class InboundEmailRecorder
         return $message;
     }
 
-    private function createPending(Request $request, string $provider): InboundEmail
+    private function createPending(Request $request, string $provider, ?string $organizationAlias): InboundEmail
     {
         return InboundEmail::create([
             'payload' => $this->rawPayload($request),
             'provider' => $provider,
+            'organization_alias' => $organizationAlias,
             'status' => InboundEmailStatus::Pending,
         ]);
     }
