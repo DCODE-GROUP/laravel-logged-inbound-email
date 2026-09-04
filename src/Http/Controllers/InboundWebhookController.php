@@ -7,6 +7,7 @@ use Dcodegroup\LaravelLoggedInboundEmail\Contracts\InboundWebhookTenantPolicy;
 use Dcodegroup\LaravelLoggedInboundEmail\Contracts\ProcessesInboundEmail;
 use Dcodegroup\LaravelLoggedInboundEmail\InboundWebhookHandlerFactory;
 use Dcodegroup\LaravelLoggedInboundEmail\Jobs\DefaultProcessInboundEmailJob;
+use Dcodegroup\LaravelLoggedInboundEmail\Support\InboundEmailRecorder;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
@@ -20,6 +21,7 @@ class InboundWebhookController extends Controller
         private readonly InboundWebhookHandlerFactory $factory,
         private readonly InboundProviderConfigResolver $providerConfigResolver,
         private readonly InboundWebhookTenantPolicy $tenantPolicy,
+        private readonly InboundEmailRecorder $recorder,
     ) {}
 
     public function handle(Request $request, string $provider): Response
@@ -46,7 +48,7 @@ class InboundWebhookController extends Controller
 
         $handler = $this->factory->make($provider);
         $handler->verify($request);
-        $message = $handler->toInboundMessage($request);
+        $message = $this->recorder->record($request, $provider, $handler);
 
         if ($message !== null) {
             $this->dispatchInboundEmailJob($message->toArray(), $orgAlias);

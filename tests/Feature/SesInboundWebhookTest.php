@@ -2,7 +2,9 @@
 
 namespace Dcodegroup\LaravelLoggedInboundEmail\Tests\Feature;
 
+use Dcodegroup\LaravelLoggedInboundEmail\Enums\InboundEmailStatus;
 use Dcodegroup\LaravelLoggedInboundEmail\Jobs\DefaultProcessInboundEmailJob;
+use Dcodegroup\LaravelLoggedInboundEmail\Models\InboundEmail;
 use Dcodegroup\LaravelLoggedInboundEmail\Tests\TestCase;
 use Illuminate\Support\Facades\Bus;
 use Illuminate\Support\Facades\Http;
@@ -63,6 +65,24 @@ class SesInboundWebhookTest extends TestCase
         $this->postJson('/webhooks/inbound/ses', $payload)->assertOk();
 
         Bus::assertNothingDispatched();
+        self::assertSame(0, InboundEmail::count());
+    }
+
+    public function test_notification_with_malformed_inner_json_marks_row_failed(): void
+    {
+        Bus::fake();
+
+        $envelope = $this->snsNotificationEnvelope(['placeholder' => true]);
+        $envelope['Message'] = 'not valid json';
+
+        $this->postJson('/webhooks/inbound/ses', $envelope)->assertBadRequest();
+
+        Bus::assertNothingDispatched();
+
+        $inboundEmail = InboundEmail::sole();
+        self::assertSame(InboundEmailStatus::Failed, $inboundEmail->status);
+        self::assertNotEmpty($inboundEmail->error);
+        self::assertSame('ses', $inboundEmail->provider);
     }
 
     public function test_notification_with_base64_content_dispatches_job(): void
@@ -79,7 +99,8 @@ class SesInboundWebhookTest extends TestCase
             'content' => base64_encode($rawMime),
         ];
 
-        $this->postJson('/webhooks/inbound/ses', $this->snsNotificationEnvelope($inner))->assertOk();
+        $envelope = $this->snsNotificationEnvelope($inner);
+        $this->postJson('/webhooks/inbound/ses', $envelope)->assertOk();
 
         Bus::assertDispatched(DefaultProcessInboundEmailJob::class, function (DefaultProcessInboundEmailJob $job): bool {
             $m = $job->message;
@@ -88,6 +109,16 @@ class SesInboundWebhookTest extends TestCase
                 && ($m['metadata']['ses_message_id'] ?? null) === 'ses-message-id-99'
                 && str_contains((string) ($m['text'] ?? ''), 'Hello SES');
         });
+
+        self::assertSame(1, InboundEmail::count());
+
+        $inboundEmail = InboundEmail::sole();
+        self::assertSame(InboundEmailStatus::Received, $inboundEmail->status);
+        self::assertSame('ses', $inboundEmail->provider);
+        self::assertStringContainsString('Hello SES', (string) $inboundEmail->text_content);
+        self::assertSame('ses-message-id-99', $inboundEmail->message_id);
+        self::assertNotNull($inboundEmail->received_at);
+        self::assertSame(json_encode($envelope, JSON_THROW_ON_ERROR), $inboundEmail->payload);
     }
 
     public function test_s3_action_loads_raw_mime_from_configured_disk(): void

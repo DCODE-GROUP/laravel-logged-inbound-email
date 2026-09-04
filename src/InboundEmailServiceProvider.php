@@ -17,7 +17,8 @@ class InboundEmailServiceProvider extends PackageServiceProvider
     {
         $package
             ->name('laravel-logged-inbound-email')
-            ->hasConfigFile('inbound-email');
+            ->hasConfigFile('inbound-email')
+            ->hasMigration('create_inbound_emails_table');
     }
 
     public function packageRegistered(): void
