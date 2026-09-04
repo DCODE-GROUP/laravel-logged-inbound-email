@@ -1,18 +1,18 @@
 <?php
 
-namespace Touqeershafi\LaravelInboundEmail\Http\Controllers;
+namespace Dcodegroup\LaravelLoggedInboundEmail\Http\Controllers;
 
+use Dcodegroup\LaravelLoggedInboundEmail\Contracts\InboundProviderConfigResolver;
+use Dcodegroup\LaravelLoggedInboundEmail\Contracts\InboundWebhookTenantPolicy;
+use Dcodegroup\LaravelLoggedInboundEmail\Contracts\ProcessesInboundEmail;
+use Dcodegroup\LaravelLoggedInboundEmail\InboundWebhookHandlerFactory;
+use Dcodegroup\LaravelLoggedInboundEmail\Jobs\DefaultProcessInboundEmailJob;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Routing\Controller;
 use RuntimeException;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
-use Touqeershafi\LaravelInboundEmail\Contracts\InboundProviderConfigResolver;
-use Touqeershafi\LaravelInboundEmail\Contracts\InboundWebhookTenantPolicy;
-use Touqeershafi\LaravelInboundEmail\Contracts\ProcessesInboundEmail;
-use Touqeershafi\LaravelInboundEmail\InboundWebhookHandlerFactory;
-use Touqeershafi\LaravelInboundEmail\Jobs\DefaultProcessInboundEmailJob;
 
 class InboundWebhookController extends Controller
 {

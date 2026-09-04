@@ -1,11 +1,11 @@
 <?php
 
-namespace Touqeershafi\LaravelInboundEmail\Tests\Feature;
+namespace Dcodegroup\LaravelLoggedInboundEmail\Tests\Feature;
 
+use Dcodegroup\LaravelLoggedInboundEmail\Jobs\DefaultProcessInboundEmailJob;
+use Dcodegroup\LaravelLoggedInboundEmail\Tests\TestCase;
 use Illuminate\Support\Facades\Bus;
 use Illuminate\Support\Facades\Http;
-use Touqeershafi\LaravelInboundEmail\Jobs\DefaultProcessInboundEmailJob;
-use Touqeershafi\LaravelInboundEmail\Tests\TestCase;
 
 class MailpitInboundWebhookTest extends TestCase
 {

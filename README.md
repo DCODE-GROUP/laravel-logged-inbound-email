@@ -11,7 +11,7 @@ Multi-provider inbound email webhooks for Laravel. Incoming HTTP requests are ve
 ## Install
 
 ```bash
-composer require touqeershafi/laravel-inbound-email
+composer require dcodegroup/laravel-logged-inbound-email
 ```
 
 The package registers its service provider automatically (`extra.laravel.providers` in Composer).
@@ -19,7 +19,7 @@ The package registers its service provider automatically (`extra.laravel.provide
 ### Publish configuration (recommended)
 
 ```bash
-php artisan vendor:publish --tag=inbound-email-config
+php artisan vendor:publish --tag=logged-inbound-email-config
 ```
 
 This copies `config/inbound-email.php` into your app. Until you publish, the package merges the same defaults from the vendor file.
@@ -100,7 +100,7 @@ The webhook controller verifies the request, builds an `InboundMessage`, and dis
 
 ### Job requirements
 
-1. Implement `Touqeershafi\LaravelInboundEmail\Contracts\ProcessesInboundEmail` (extends `ShouldQueue`).
+1. Implement `Dcodegroup\LaravelLoggedInboundEmail\Contracts\ProcessesInboundEmail` (extends `ShouldQueue`).
 2. Use `Illuminate\Foundation\Bus\Dispatchable` (and typically `Queueable`, `InteractsWithQueue`, `SerializesModels`).
 3. **`array $message`** — Serialized `InboundMessage` (`InboundMessage::toArray()` shape).
 4. **Multi-tenant only:** second constructor parameter **`string $orgAlias`** — value of `{orgAlias}` from the URL. When `organization_in_route` is `false`, the package dispatches with **only** `$message`, so a one-argument constructor remains valid for single-tenant setups.
@@ -108,7 +108,7 @@ The webhook controller verifies the request, builds an `InboundMessage`, and dis
 Rebuild the DTO in `handle()`:
 
 ```php
-$inbound = \Touqeershafi\LaravelInboundEmail\InboundMessage::fromArray($this->message);
+$inbound = \Dcodegroup\LaravelLoggedInboundEmail\InboundMessage::fromArray($this->message);
 ```
 
 ### Dispatch behavior
@@ -127,8 +127,8 @@ use Illuminate\Bus\Queueable;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
-use Touqeershafi\LaravelInboundEmail\Contracts\ProcessesInboundEmail;
-use Touqeershafi\LaravelInboundEmail\InboundMessage;
+use Dcodegroup\LaravelLoggedInboundEmail\Contracts\ProcessesInboundEmail;
+use Dcodegroup\LaravelLoggedInboundEmail\InboundMessage;
 
 final class HandleInboundEmail implements ProcessesInboundEmail
 {

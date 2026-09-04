@@ -1,10 +1,10 @@
 <?php
 
-namespace Touqeershafi\LaravelInboundEmail\Tests\Feature;
+namespace Dcodegroup\LaravelLoggedInboundEmail\Tests\Feature;
 
+use Dcodegroup\LaravelLoggedInboundEmail\Jobs\DefaultProcessInboundEmailJob;
+use Dcodegroup\LaravelLoggedInboundEmail\Tests\TestCase;
 use Illuminate\Support\Facades\Bus;
-use Touqeershafi\LaravelInboundEmail\Jobs\DefaultProcessInboundEmailJob;
-use Touqeershafi\LaravelInboundEmail\Tests\TestCase;
 
 class OrganizationInboundWebhookTest extends TestCase
 {

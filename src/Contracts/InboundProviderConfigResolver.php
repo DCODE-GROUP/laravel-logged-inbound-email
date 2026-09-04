@@ -1,6 +1,6 @@
 <?php
 
-namespace Touqeershafi\LaravelInboundEmail\Contracts;
+namespace Dcodegroup\LaravelLoggedInboundEmail\Contracts;
 
 interface InboundProviderConfigResolver
 {

@@ -1,10 +1,14 @@
-name: CI
+name: phpstan
 
 on:
   push:
     branches:
       - main
       - "feature/**"
+    paths:
+      - "**.php"
+      - "phpstan.neon"
+      - ".github/workflows/phpstan.yml"
   pull_request:
     branches: [main]
 
@@ -12,16 +16,17 @@ permissions:
   contents: read
 
 concurrency:
-  group: ci-${{ github.workflow }}-${{ github.ref }}
+  group: phpstan-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
-  quality:
-    name: Pint, PHPStan, PHPUnit
+  phpstan:
+    name: phpstan
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout code
+        uses: actions/checkout@v4
 
       - name: Setup PHP
         uses: shivammathur/setup-php@v2
@@ -33,11 +38,5 @@ jobs:
       - name: Install dependencies
         run: composer install --no-interaction --prefer-dist --no-progress
 
-      - name: Pint (style)
-        run: composer lint
-
-      - name: PHPStan (static analysis)
-        run: composer analyse
-
-      - name: PHPUnit (tests)
-        run: composer test
+      - name: Run PHPStan
+        run: composer analyse -- --error-format=github

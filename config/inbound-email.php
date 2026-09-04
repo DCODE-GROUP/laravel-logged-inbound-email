@@ -1,6 +1,6 @@
 <?php
 
-use Touqeershafi\LaravelInboundEmail\Jobs\DefaultProcessInboundEmailJob;
+use Dcodegroup\LaravelLoggedInboundEmail\Jobs\DefaultProcessInboundEmailJob;
 
 return [
 

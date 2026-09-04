@@ -1,35 +1,35 @@
 <?php
 
-namespace Touqeershafi\LaravelInboundEmail;
+namespace Dcodegroup\LaravelLoggedInboundEmail;
 
+use Dcodegroup\LaravelLoggedInboundEmail\Contracts\InboundProviderConfigResolver;
+use Dcodegroup\LaravelLoggedInboundEmail\Contracts\InboundWebhookTenantPolicy;
+use Dcodegroup\LaravelLoggedInboundEmail\Support\AllowAllInboundWebhookTenantPolicy;
+use Dcodegroup\LaravelLoggedInboundEmail\Support\NullInboundProviderConfigResolver;
+use Dcodegroup\LaravelLoggedInboundEmail\Support\SnsMessageVerifier;
 use Illuminate\Support\Facades\Route;
-use Illuminate\Support\ServiceProvider;
-use Touqeershafi\LaravelInboundEmail\Contracts\InboundProviderConfigResolver;
-use Touqeershafi\LaravelInboundEmail\Contracts\InboundWebhookTenantPolicy;
-use Touqeershafi\LaravelInboundEmail\Support\AllowAllInboundWebhookTenantPolicy;
-use Touqeershafi\LaravelInboundEmail\Support\NullInboundProviderConfigResolver;
-use Touqeershafi\LaravelInboundEmail\Support\SnsMessageVerifier;
+use Spatie\LaravelPackageTools\Package;
+use Spatie\LaravelPackageTools\PackageServiceProvider;
 
-class InboundEmailServiceProvider extends ServiceProvider
+class InboundEmailServiceProvider extends PackageServiceProvider
 {
-    public function register(): void
+    public function configurePackage(Package $package): void
     {
-        $this->mergeConfigFrom(__DIR__.'/../config/inbound-email.php', 'inbound-email');
+        $package
+            ->name('laravel-logged-inbound-email')
+            ->hasConfigFile('inbound-email');
+    }
 
+    public function packageRegistered(): void
+    {
         $this->app->singleton(SnsMessageVerifier::class);
 
         $this->app->singleton(InboundProviderConfigResolver::class, NullInboundProviderConfigResolver::class);
         $this->app->singleton(InboundWebhookTenantPolicy::class, AllowAllInboundWebhookTenantPolicy::class);
     }
 
-    public function boot(): void
+    public function packageBooted(): void
     {
-        if ($this->app->runningInConsole()) {
-            $this->publishes([
-                __DIR__.'/../config/inbound-email.php' => config_path('inbound-email.php'),
-            ], 'inbound-email-config');
-        }
-
         $this->registerRoutes();
     }
 
