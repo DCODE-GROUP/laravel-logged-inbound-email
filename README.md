@@ -4,7 +4,7 @@ Multi-provider inbound email webhooks for Laravel. Incoming HTTP requests are ve
 
 **Supported providers:** Mailgun, Postmark, SendGrid, Amazon SES (via SNS), Mailpit, Resend.
 
-**Requirements:** PHP `^8.4`, Laravel `10.x`+ (Illuminate `^10`–`^13` per `composer.json`).
+**Requirements:** PHP `^8.4`, Laravel `12.x`+ (Illuminate `^12`–`^13` per `composer.json`).
 
 ---
 
