@@ -5,8 +5,11 @@ namespace Dcodegroup\LaravelLoggedInboundEmail\Tests\Feature;
 use Dcodegroup\LaravelLoggedInboundEmail\Enums\InboundEmailStatus;
 use Dcodegroup\LaravelLoggedInboundEmail\Jobs\DefaultProcessInboundEmailJob;
 use Dcodegroup\LaravelLoggedInboundEmail\Models\InboundEmail;
+use Dcodegroup\LaravelLoggedInboundEmail\Models\InboundEmailAttachment;
 use Dcodegroup\LaravelLoggedInboundEmail\Tests\TestCase;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Bus;
+use Illuminate\Support\Facades\Storage;
 
 class MailgunInboundWebhookTest extends TestCase
 {
@@ -79,5 +82,35 @@ class MailgunInboundWebhookTest extends TestCase
         self::assertSame(['email' => 'from@example.com', 'name' => null], $inboundEmail->from);
         self::assertSame([['email' => 'to@example.com', 'name' => null]], $inboundEmail->to);
         self::assertNotNull($inboundEmail->received_at);
+    }
+
+    public function test_stores_attachments_on_the_configured_disk(): void
+    {
+        Bus::fake();
+        Storage::fake('inbound-attachments');
+        config(['inbound-email.attachments.disk' => 'inbound-attachments']);
+
+        $ts = (string) time();
+        $token = 'abc';
+        $sig = $this->mailgunSignature($ts, $token, 'test-mailgun-key');
+        $payload = $this->validMailgunPayload($ts, $token, $sig);
+        $payload['attachment-count'] = '1';
+        $payload['attachment-1'] = UploadedFile::fake()->createWithContent('invoice.pdf', 'pdf-file-content');
+
+        $this->post('/webhooks/inbound/mailgun', $payload)
+            ->assertOk();
+
+        self::assertSame(1, InboundEmailAttachment::count());
+
+        $attachment = InboundEmailAttachment::sole();
+        $inboundEmail = InboundEmail::sole();
+
+        self::assertSame($inboundEmail->id, $attachment->inbound_email_id);
+        self::assertSame('invoice.pdf', $attachment->filename);
+        self::assertSame('inbound-attachments', $attachment->disk);
+        self::assertSame(strlen('pdf-file-content'), $attachment->size);
+
+        Storage::disk('inbound-attachments')->assertExists($attachment->path);
+        self::assertSame('pdf-file-content', Storage::disk('inbound-attachments')->get($attachment->path));
     }
 }

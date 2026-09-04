@@ -4,6 +4,7 @@ namespace Dcodegroup\LaravelLoggedInboundEmail\Models;
 
 use Dcodegroup\LaravelLoggedInboundEmail\Enums\InboundEmailStatus;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Carbon;
 
 /**
@@ -47,5 +48,13 @@ class InboundEmail extends Model
             'received_at' => 'datetime',
             'status' => InboundEmailStatus::class,
         ];
+    }
+
+    /**
+     * @return HasMany<InboundEmailAttachment, $this>
+     */
+    public function attachments(): HasMany
+    {
+        return $this->hasMany(InboundEmailAttachment::class);
     }
 }

@@ -65,6 +65,20 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Attachments
+    |--------------------------------------------------------------------------
+    |
+    | Attachments extracted from InboundMessage are written to this filesystem
+    | disk, and one InboundEmailAttachment row is created per file. Defaults
+    | to the application's default disk.
+    |
+    */
+    'attachments' => [
+        'disk' => env('INBOUND_EMAIL_ATTACHMENTS_DISK', config('filesystems.default')),
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
     | Provider-specific settings
     |--------------------------------------------------------------------------
     */
