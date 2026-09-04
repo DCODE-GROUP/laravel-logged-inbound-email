@@ -31,7 +31,11 @@ return new class extends Migration
             $table->string('status');
             $table->text('error')->nullable();
 
+            $table->nullableMorphs('contactable');
+            $table->nullableMorphs('processable');
+
             $table->timestamps();
+            $table->softDeletes();
 
             $table->index('status');
             $table->index('message_id');

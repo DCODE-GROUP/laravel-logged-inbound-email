@@ -4,6 +4,8 @@ namespace Dcodegroup\LaravelLoggedInboundEmail\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Carbon;
 
 /**
  * A single attachment extracted from an inbound email, with its content
@@ -17,9 +19,12 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property string $path
  * @property string|null $content_type
  * @property int|null $size
+ * @property Carbon|null $deleted_at
  */
 class InboundEmailAttachment extends Model
 {
+    use SoftDeletes;
+
     protected $table = 'inbound_email_attachments';
 
     protected $guarded = [];
