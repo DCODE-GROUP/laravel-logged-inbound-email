@@ -33,7 +33,8 @@
     },
     "autoload": {
         "psr-4": {
-            "Dcodegroup\\LaravelLoggedInboundEmail\\": "src/"
+            "Dcodegroup\\LaravelLoggedInboundEmail\\": "src/",
+            "Dcodegroup\\LaravelLoggedInboundEmail\\Database\\Factories\\": "database/factories/"
         }
     },
     "autoload-dev": {

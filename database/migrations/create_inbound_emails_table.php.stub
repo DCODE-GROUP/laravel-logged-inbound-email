@@ -42,7 +42,15 @@ return new class extends Migration
             $table->string('status');
             $table->text('error')->nullable();
 
+            // Nullable polymorphic relations the package never populates;
+            // only the consuming app sets these, to link the email to
+            // whichever of its own models represents the sender and/or
+            // whatever business record the email produced.
+            $table->nullableMorphs('contactable');
+            $table->nullableMorphs('processable');
+
             $table->timestamps();
+            $table->softDeletes();
 
             $table->index('status');
             $table->index('message_id');

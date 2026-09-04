@@ -22,6 +22,7 @@ return new class extends Migration
             $table->unsignedBigInteger('size')->nullable();
 
             $table->timestamps();
+            $table->softDeletes();
         });
     }
 
