@@ -6,8 +6,11 @@ use Dcodegroup\LaravelLoggedInboundEmail\Contracts\InboundWebhookHandler;
 use Dcodegroup\LaravelLoggedInboundEmail\Enums\InboundEmailStatus;
 use Dcodegroup\LaravelLoggedInboundEmail\InboundMessage;
 use Dcodegroup\LaravelLoggedInboundEmail\Models\InboundEmail;
+use Dcodegroup\LaravelLoggedInboundEmail\Models\InboundEmailAttachment;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 use Throwable;
 
 /**
@@ -85,6 +88,46 @@ class InboundEmailRecorder
             'received_at' => Carbon::now(),
             'status' => InboundEmailStatus::Received,
         ]);
+
+        $this->storeAttachments($inboundEmail, $message);
+    }
+
+    /**
+     * Write each InboundMessage attachment's (base64-encoded) content to the
+     * configured disk, and create one InboundEmailAttachment row per file.
+     */
+    private function storeAttachments(InboundEmail $inboundEmail, InboundMessage $message): void
+    {
+        if ($message->attachments === []) {
+            return;
+        }
+
+        $disk = (string) config('inbound-email.attachments.disk');
+
+        foreach ($message->attachments as $attachment) {
+            $filename = $attachment['filename'];
+            $contentType = $attachment['content_type'];
+            $content = base64_decode($attachment['content_base64'], true);
+            $content = $content === false ? '' : $content;
+
+            $path = sprintf(
+                'inbound-email-attachments/%d/%s-%s',
+                $inboundEmail->id,
+                Str::random(20),
+                $filename,
+            );
+
+            Storage::disk($disk)->put($path, $content);
+
+            InboundEmailAttachment::create([
+                'inbound_email_id' => $inboundEmail->id,
+                'filename' => $filename,
+                'disk' => $disk,
+                'path' => $path,
+                'content_type' => $contentType,
+                'size' => strlen($content),
+            ]);
+        }
     }
 
     /**
