@@ -1,27 +1,23 @@
-name: CI
+name: code-style
 
 on:
-  push:
-    branches:
-      - main
-      - "feature/**"
   pull_request:
-    branches: [main]
 
 permissions:
   contents: read
 
 concurrency:
-  group: ci-${{ github.workflow }}-${{ github.ref }}
+  group: code-style-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
-  quality:
-    name: Pint, PHPStan, PHPUnit
-    runs-on: ubuntu-latest
+  lint:
+    name: Pint
+    runs-on: self-hosted
 
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout code
+        uses: actions/checkout@v4
 
       - name: Setup PHP
         uses: shivammathur/setup-php@v2
@@ -35,9 +31,3 @@ jobs:
 
       - name: Pint (style)
         run: composer lint
-
-      - name: PHPStan (static analysis)
-        run: composer analyse
-
-      - name: PHPUnit (tests)
-        run: composer test
