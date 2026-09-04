@@ -2,7 +2,9 @@
 
 namespace Dcodegroup\LaravelLoggedInboundEmail\Tests\Feature;
 
+use Dcodegroup\LaravelLoggedInboundEmail\Enums\InboundEmailStatus;
 use Dcodegroup\LaravelLoggedInboundEmail\Jobs\DefaultProcessInboundEmailJob;
+use Dcodegroup\LaravelLoggedInboundEmail\Models\InboundEmail;
 use Dcodegroup\LaravelLoggedInboundEmail\Tests\TestCase;
 use Illuminate\Support\Facades\Bus;
 
@@ -19,6 +21,7 @@ class MailgunInboundWebhookTest extends TestCase
             ->assertForbidden();
 
         Bus::assertNothingDispatched();
+        self::assertSame(0, InboundEmail::count());
     }
 
     public function test_rejects_invalid_signature(): void
@@ -30,6 +33,7 @@ class MailgunInboundWebhookTest extends TestCase
             ->assertForbidden();
 
         Bus::assertNothingDispatched();
+        self::assertSame(0, InboundEmail::count());
     }
 
     public function test_rejects_stale_timestamp(): void
@@ -43,6 +47,7 @@ class MailgunInboundWebhookTest extends TestCase
             ->assertForbidden();
 
         Bus::assertNothingDispatched();
+        self::assertSame(0, InboundEmail::count());
     }
 
     public function test_dispatches_job_with_normalized_payload(): void
@@ -52,8 +57,9 @@ class MailgunInboundWebhookTest extends TestCase
         $ts = (string) time();
         $token = 'abc';
         $sig = $this->mailgunSignature($ts, $token, 'test-mailgun-key');
+        $payload = $this->validMailgunPayload($ts, $token, $sig);
 
-        $this->post('/webhooks/inbound/mailgun', $this->validMailgunPayload($ts, $token, $sig))
+        $this->post('/webhooks/inbound/mailgun', $payload)
             ->assertOk();
 
         Bus::assertDispatched(DefaultProcessInboundEmailJob::class, function (DefaultProcessInboundEmailJob $job): bool {
@@ -61,5 +67,17 @@ class MailgunInboundWebhookTest extends TestCase
                 && ($job->message['subject'] ?? null) === 'Hello'
                 && ($job->message['text'] ?? null) === 'Test body';
         });
+
+        self::assertSame(1, InboundEmail::count());
+
+        $inboundEmail = InboundEmail::sole();
+        self::assertSame(InboundEmailStatus::Received, $inboundEmail->status);
+        self::assertSame(http_build_query($payload), $inboundEmail->payload);
+        self::assertSame('mailgun', $inboundEmail->provider);
+        self::assertSame('Hello', $inboundEmail->subject);
+        self::assertSame('Test body', $inboundEmail->text_content);
+        self::assertSame(['email' => 'from@example.com', 'name' => null], $inboundEmail->from);
+        self::assertSame([['email' => 'to@example.com', 'name' => null]], $inboundEmail->to);
+        self::assertNotNull($inboundEmail->received_at);
     }
 }

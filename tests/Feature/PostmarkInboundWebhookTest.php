@@ -2,7 +2,9 @@
 
 namespace Dcodegroup\LaravelLoggedInboundEmail\Tests\Feature;
 
+use Dcodegroup\LaravelLoggedInboundEmail\Enums\InboundEmailStatus;
 use Dcodegroup\LaravelLoggedInboundEmail\Jobs\DefaultProcessInboundEmailJob;
+use Dcodegroup\LaravelLoggedInboundEmail\Models\InboundEmail;
 use Dcodegroup\LaravelLoggedInboundEmail\Tests\TestCase;
 use Illuminate\Support\Facades\Bus;
 
@@ -45,6 +47,7 @@ class PostmarkInboundWebhookTest extends TestCase
         ], $signed['body'])->assertForbidden();
 
         Bus::assertNothingDispatched();
+        self::assertSame(0, InboundEmail::count());
     }
 
     public function test_rejects_invalid_signature(): void
@@ -58,6 +61,7 @@ class PostmarkInboundWebhookTest extends TestCase
         ], $signed['body'])->assertForbidden();
 
         Bus::assertNothingDispatched();
+        self::assertSame(0, InboundEmail::count());
     }
 
     public function test_dispatches_job_with_addresses_and_bodies(): void
@@ -79,5 +83,15 @@ class PostmarkInboundWebhookTest extends TestCase
                 && ($m['text'] ?? null) === 'Plain'
                 && ($m['metadata']['postmark_message_id'] ?? null) === 'pm-1';
         });
+
+        self::assertSame(1, InboundEmail::count());
+
+        $inboundEmail = InboundEmail::sole();
+        self::assertSame(InboundEmailStatus::Received, $inboundEmail->status);
+        self::assertSame($signed['body'], $inboundEmail->payload);
+        self::assertSame('postmark', $inboundEmail->provider);
+        self::assertSame('Postmark subject', $inboundEmail->subject);
+        self::assertSame('Plain', $inboundEmail->text_content);
+        self::assertSame('pm-1', $inboundEmail->message_id);
     }
 }

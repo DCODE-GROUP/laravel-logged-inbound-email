@@ -3,6 +3,7 @@
 namespace Dcodegroup\LaravelLoggedInboundEmail\Tests\Feature;
 
 use Dcodegroup\LaravelLoggedInboundEmail\Jobs\DefaultProcessInboundEmailJob;
+use Dcodegroup\LaravelLoggedInboundEmail\Models\InboundEmail;
 use Dcodegroup\LaravelLoggedInboundEmail\Tests\TestCase;
 use Illuminate\Support\Facades\Bus;
 
@@ -31,6 +32,10 @@ class OrganizationInboundWebhookTest extends TestCase
                 && $job->message['provider'] === 'mailgun'
                 && ($job->message['subject'] ?? null) === 'Hello';
         });
+
+        // organization_alias is out of scope for this ticket (a later ticket
+        // adds the column); the row is still recorded as normal.
+        self::assertSame(1, InboundEmail::count());
     }
 
     public function test_unknown_provider_returns_404(): void
