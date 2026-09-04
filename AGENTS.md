@@ -1,3 +1,7 @@
+## Project provenance
+
+This package started as a fork but is now developed as an independent project. Unless explicitly told otherwise, treat it as unrelated to the original upstream repo: don't look up, reference, sync with, or assume compatibility with the original project's issues, releases, docs, or conventions.
+
 ## Agent skills
 
 ### Issue tracker

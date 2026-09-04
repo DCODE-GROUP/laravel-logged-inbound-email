@@ -1,15 +1,7 @@
 name: code-style
 
 on:
-  push:
-    branches:
-      - main
-      - "feature/**"
-    paths:
-      - "**.php"
-      - ".github/workflows/code-style.yml"
   pull_request:
-    branches: [main]
 
 permissions:
   contents: read
@@ -21,7 +13,7 @@ concurrency:
 jobs:
   lint:
     name: Pint
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
 
     steps:
       - name: Checkout code

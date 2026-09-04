@@ -143,11 +143,13 @@ class InboundEmailRecorder
      * is unavailable — this includes both non-JSON POSTs in the test HTTP
      * client (where Symfony's Request::create() never populates
      * php://input) and real multipart/form-data webhooks with file uploads
-     * (e.g. Mailgun's attachment-N fields), since PHP itself never exposes
-     * php://input for multipart request bodies. Uploaded files are replaced
-     * with their metadata, since UploadedFile instances aren't stringable
-     * and the file content itself is preserved separately as an
-     * InboundEmailAttachment once the message is parsed.
+     * (e.g. Mailgun's attachment-N fields), since PHP's SAPI consumes
+     * multipart bodies into $_POST/$_FILES before userland code runs and
+     * never exposes php://input for them — no framework can recover the
+     * original bytes at that point. The fallback still preserves every
+     * byte the provider sent: uploaded files are inlined as base64 content
+     * alongside their metadata, so nothing is lost even though the exact
+     * multipart framing (boundary, header order) can't be reconstructed.
      */
     private function rawPayload(Request $request): string
     {
@@ -172,6 +174,7 @@ class InboundEmailRecorder
                 'filename' => $value->getClientOriginalName(),
                 'content_type' => $value->getMimeType(),
                 'size' => $value->getSize(),
+                'content_base64' => base64_encode((string) file_get_contents($value->getRealPath())),
             ] : $value;
         }
 

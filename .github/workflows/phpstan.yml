@@ -1,16 +1,7 @@
 name: phpstan
 
 on:
-  push:
-    branches:
-      - main
-      - "feature/**"
-    paths:
-      - "**.php"
-      - "phpstan.neon"
-      - ".github/workflows/phpstan.yml"
   pull_request:
-    branches: [main]
 
 permissions:
   contents: read
@@ -22,7 +13,11 @@ concurrency:
 jobs:
   phpstan:
     name: phpstan
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
+
+    strategy:
+      matrix:
+        php: ['8.4', "8.5"]
 
     steps:
       - name: Checkout code
@@ -31,12 +26,12 @@ jobs:
       - name: Setup PHP
         uses: shivammathur/setup-php@v2
         with:
-          php-version: "8.4"
+          php-version: ${{ matrix.php }}
           tools: composer:v2
           coverage: none
 
       - name: Install dependencies
         run: composer install --no-interaction --prefer-dist --no-progress
 
-      - name: Run PHPStan
+      - name: Run PHPStan PHP v${{ matrix.php }}
         run: composer analyse -- --error-format=github

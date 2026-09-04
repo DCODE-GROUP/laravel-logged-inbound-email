@@ -114,5 +114,9 @@ class MailgunInboundWebhookTest extends TestCase
 
         Storage::disk('inbound-attachments')->assertExists($attachment->path);
         self::assertSame('pdf-file-content', Storage::disk('inbound-attachments')->get($attachment->path));
+
+        $storedPayload = json_decode($inboundEmail->payload, true);
+        self::assertSame('invoice.pdf', $storedPayload['attachment-1']['filename']);
+        self::assertSame('pdf-file-content', base64_decode($storedPayload['attachment-1']['content_base64'], true));
     }
 }
