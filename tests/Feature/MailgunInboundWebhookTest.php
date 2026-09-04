@@ -79,5 +79,7 @@ class MailgunInboundWebhookTest extends TestCase
         self::assertSame(['email' => 'from@example.com', 'name' => null], $inboundEmail->from);
         self::assertSame([['email' => 'to@example.com', 'name' => null]], $inboundEmail->to);
         self::assertNotNull($inboundEmail->received_at);
+        self::assertNull($inboundEmail->organization_alias);
+        self::assertNull($inboundEmail->tenant_id);
     }
 }

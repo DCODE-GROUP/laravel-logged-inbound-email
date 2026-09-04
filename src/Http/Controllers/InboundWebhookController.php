@@ -48,7 +48,11 @@ class InboundWebhookController extends Controller
 
         $handler = $this->factory->make($provider);
         $handler->verify($request);
-        $message = $this->recorder->record($request, $provider, $handler);
+
+        $organizationInRoute = (bool) config('inbound-email.organization_in_route', false);
+        $organizationAlias = $organizationInRoute ? $orgForPolicy : null;
+
+        $message = $this->recorder->record($request, $provider, $handler, $organizationAlias);
 
         if ($message !== null) {
             $this->dispatchInboundEmailJob($message->toArray(), $orgAlias);
