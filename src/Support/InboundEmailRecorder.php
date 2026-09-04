@@ -8,6 +8,7 @@ use Dcodegroup\LaravelLoggedInboundEmail\InboundMessage;
 use Dcodegroup\LaravelLoggedInboundEmail\Models\InboundEmail;
 use Dcodegroup\LaravelLoggedInboundEmail\Models\InboundEmailAttachment;
 use Illuminate\Http\Request;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
@@ -58,7 +59,7 @@ class InboundEmailRecorder
         }
 
         if ($message === null) {
-            $inboundEmail->delete();
+            $inboundEmail->forceDelete();
 
             return null;
         }
@@ -137,11 +138,16 @@ class InboundEmailRecorder
     }
 
     /**
-     * The verbatim webhook body, exactly as received. Falls back to
-     * reconstructing a form-encoded body from the parsed request parameters
-     * for requests whose raw content is unavailable (e.g. non-JSON POSTs in
-     * the test HTTP client, where Symfony's Request::create() never
-     * populates php://input).
+     * The verbatim webhook body, exactly as received. Falls back to a JSON
+     * dump of the parsed request parameters for requests whose raw content
+     * is unavailable — this includes both non-JSON POSTs in the test HTTP
+     * client (where Symfony's Request::create() never populates
+     * php://input) and real multipart/form-data webhooks with file uploads
+     * (e.g. Mailgun's attachment-N fields), since PHP itself never exposes
+     * php://input for multipart request bodies. Uploaded files are replaced
+     * with their metadata, since UploadedFile instances aren't stringable
+     * and the file content itself is preserved separately as an
+     * InboundEmailAttachment once the message is parsed.
      */
     private function rawPayload(Request $request): string
     {
@@ -151,7 +157,25 @@ class InboundEmailRecorder
             return $content;
         }
 
-        return http_build_query($request->all());
+        return (string) json_encode($this->serializableInput($request));
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function serializableInput(Request $request): array
+    {
+        $data = [];
+
+        foreach ($request->all() as $key => $value) {
+            $data[$key] = $value instanceof UploadedFile ? [
+                'filename' => $value->getClientOriginalName(),
+                'content_type' => $value->getMimeType(),
+                'size' => $value->getSize(),
+            ] : $value;
+        }
+
+        return $data;
     }
 
     /**

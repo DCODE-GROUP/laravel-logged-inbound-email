@@ -66,6 +66,7 @@ class SesInboundWebhookTest extends TestCase
 
         Bus::assertNothingDispatched();
         self::assertSame(0, InboundEmail::count());
+        self::assertCount(0, InboundEmail::withTrashed()->get());
     }
 
     public function test_notification_with_malformed_inner_json_marks_row_failed(): void

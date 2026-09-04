@@ -37,7 +37,7 @@ class SendGridInboundWebhookTest extends TestCase
 
         $inboundEmail = InboundEmail::sole();
         self::assertSame(InboundEmailStatus::Received, $inboundEmail->status);
-        self::assertSame(http_build_query($payload), $inboundEmail->payload);
+        self::assertSame(json_encode($payload), $inboundEmail->payload);
         self::assertSame('sendgrid', $inboundEmail->provider);
         self::assertSame('SG subject', $inboundEmail->subject);
         self::assertSame('Hello SendGrid', $inboundEmail->text_content);

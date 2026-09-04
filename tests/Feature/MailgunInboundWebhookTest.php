@@ -75,7 +75,7 @@ class MailgunInboundWebhookTest extends TestCase
 
         $inboundEmail = InboundEmail::sole();
         self::assertSame(InboundEmailStatus::Received, $inboundEmail->status);
-        self::assertSame(http_build_query($payload), $inboundEmail->payload);
+        self::assertSame(json_encode($payload), $inboundEmail->payload);
         self::assertSame('mailgun', $inboundEmail->provider);
         self::assertSame('Hello', $inboundEmail->subject);
         self::assertSame('Test body', $inboundEmail->text_content);
