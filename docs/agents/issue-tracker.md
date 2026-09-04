@@ -1,51 +1,47 @@
-# Issue tracker: Solo MCP Todos
+# Issue tracker: Kanopi
 
-Issues and specs for this repo live as todo items in the Solo MCP task system, scoped to
-Solo project id `27` (`laravel-logged-inbound-email`, path
-`/Users/jny986/Herd/laravel-logged-inbound-email`).
+Issues and specs for this repo live as Kanopi tickets under the **Laravel Logged Inbound
+Email** project (project ID `1598`), client **DCODE GROUP** (client ID `70`). Use the
+`mcp__Kanopi__*` tools for all operations — there is no CLI equivalent.
 
 ## Conventions
 
-- Tools: `mcp__solo__todo_create`, `todo_list`, `todo_get`, `todo_update`,
-  `todo_comment_create` / `todo_comment_list`, `todo_add_blocker` / `todo_set_blockers` /
-  `todo_remove_blocker`.
-- `project_id`: `27`. Can usually be omitted — `whoami`'s `effective_project_id` resolves
-  to this repo when run from within it.
-- **Title**: short summary, same role as a GitHub issue title.
-- **Body**: the full issue description (spec, ticket details, etc).
-- **Tags**: used to record triage labels (see `triage-labels.md`) plus any other freeform
-  categorisation, e.g. `effort:<slug>` to group a feature's todos.
-- **Priority**: `high` / `medium` / `low` — set as appropriate; independent of triage state.
-- **Status**: Solo's native lifecycle (`open` / `in_progress` / `backlog` / `completed`) is
-  separate from triage label tags — a todo can be `open` and tagged `needs-triage` at the
-  same time.
-- **Comments**: use `todo_comment_create` / `todo_comment_list` for conversation history.
-- **Blocking**: use `todo_add_blocker` / `todo_set_blockers` / `todo_remove_blocker` to
-  record dependencies; filter with `is_blocked` on `todo_list` to find unblocked work.
+- **Create a ticket**: `mcp__Kanopi__create-ticket` with `client_id: 70`, `project_id: 1598`, `name`, and `description`. Set `ticket_type` (`feature`, `bug`, `customer request`, `opportunity`, `warranty`, `maintenance`, `qa`) to match the work.
+- **Read a ticket**: `mcp__Kanopi__show-ticket` with the ticket ID (accepts an array to batch-fetch). `mcp__Kanopi__list-ticket-comments` for its discussion.
+- **List tickets**: `mcp__Kanopi__list-tickets` with `project_id: 1598`, optionally filtered by `status`, `ticket_type`, `assigned_user_id`, or date range.
+- **Find a ticket by text**: `mcp__Kanopi__search-tickets` with a `query` string (full-text, ranked by relevance, not scoped to a project).
+- **Comment on a ticket**: `mcp__Kanopi__add-ticket-comment`. Use `@[Full Name]` in the comment body to notify a user.
+- **Change status**: `mcp__Kanopi__update-ticket-status` with the target status's machine name — do not set status via `update-ticket`. Discover valid machine names for this project by checking the `status` field on existing tickets (e.g. `Backlog`, `Client`, `Done`) via `list-tickets`.
+- **Edit other fields** (name, description, assignee, priority, tags, milestone, stage, due date): `mcp__Kanopi__update-ticket`.
+- **Tags**: look up tag IDs with `mcp__Kanopi__list-tags` (search by name) before passing them to `create-ticket`/`update-ticket`; Kanopi tags are org-wide, not project-scoped, so search before assuming a tag doesn't exist.
+
+## Pull requests as a triage surface
+
+**PRs as a request surface: no.** Kanopi has no concept of pull requests; PR review still happens on GitHub, but PRs are not pulled into the ticket triage queue.
 
 ## When a skill says "publish to the issue tracker"
 
-Call `todo_create` with `project_id: 27`, a descriptive title, the issue body, and tags
-(e.g. `["needs-triage"]`).
+Create a Kanopi ticket with `mcp__Kanopi__create-ticket` (`client_id: 70`, `project_id: 1598`).
 
 ## When a skill says "fetch the relevant ticket"
 
-Call `todo_get` with the referenced `todo_id` (`include_comments: true` if history
-matters). The user will normally pass the `todo_id` or its title directly.
+Run `mcp__Kanopi__show-ticket` with the ticket ID, and `mcp__Kanopi__list-ticket-comments` for its history.
 
-## Wayfinding operations
+## Triage-role → status mapping
 
-Used by `/wayfinder`. Todos have no file-based numbering, so:
+Kanopi has no separate label state for triage roles — the five canonical roles map onto
+this project's ticket **status** instead (set via `mcp__Kanopi__update-ticket-status`,
+using the machine name, not the display name):
 
-- **Map**: a parent todo per effort, title prefixed with the effort name; body holds
-  Notes / Decisions-so-far / Fog.
-- **Child ticket**: a todo tagged `effort:<slug>` for grouping, with the question in the
-  body.
-- **Blocking**: `todo_set_blockers` records dependencies; a ticket is unblocked when every
-  todo it lists is `completed`.
-- **Frontier**: `todo_list` filtered by `tags: ["effort:<slug>"]`, `completed: false`,
-  `is_blocked: false`; first match wins.
-- **Claim**: `todo_update` with `status: "in_progress"` before starting work.
-- **Resolve**: `todo_comment_create` with the answer, `todo_update` with
-  `status: "completed"`, then append a decision pointer (todo id + gist) to the map
-  todo's body.
+| Triage role | Status (display) | Status (machine name) |
+| --- | --- | --- |
+| `needs-triage` | Backlog | `backlog` |
+| `needs-info` | Client | `client` |
+| `ready-for-agent` | OnDeck | `on_deck` (confirmed live) |
+| `ready-for-human` | ToDo | `to_do` (unconfirmed — verify before relying on it) |
+| `wontfix` | Archived | `archived` (unconfirmed — verify before relying on it) |
+
+`Client` is a semantic stretch — it normally means "waiting on the client," repurposed
+here for "waiting on the ticket reporter" since there's no other "blocked on someone
+outside the team" status. `ready-for-agent` vs `ready-for-human` is enforced by
+convention (which status you set), not by the tool itself.

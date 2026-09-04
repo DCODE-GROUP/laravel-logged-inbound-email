@@ -6,11 +6,11 @@ This package started as a fork but is now developed as an independent project. U
 
 ### Issue tracker
 
-Issues live as Solo MCP todo items scoped to Solo project id 27. See `docs/agents/issue-tracker.md`.
+Issues live as Kanopi tickets under the "Laravel Logged Inbound Email" project (ID 1598, client DCODE GROUP). See `docs/agents/issue-tracker.md`.
 
 ### Triage labels
 
-Default five-role vocabulary, recorded as Solo todo tags. See `docs/agents/triage-labels.md`.
+Default five-role vocabulary, mapped to Kanopi ticket status (not a label). See `docs/agents/triage-labels.md`.
 
 ### Domain docs
 
