@@ -15,19 +15,22 @@ use Illuminate\Support\Str;
 use Throwable;
 
 /**
- * Persists the InboundEmail row for a webhook that has already passed
- * verification, and drives it through the package-owned portion of its
- * status lifecycle: Pending -> Receiving -> Received, or Failed.
+ * Persists the InboundEmail row for an incoming webhook and drives it
+ * through the package-owned portion of its status lifecycle:
+ * Pending -> Receiving -> Received, or Failed.
  *
  * One row is created per webhook and updated in place; nothing here ever
- * runs before InboundWebhookTenantPolicy::assertInboundAllowed() and the
- * provider handler's verify() have both already succeeded.
+ * runs before InboundWebhookTenantPolicy::assertInboundAllowed() has already
+ * succeeded, but the row is created before the provider handler's verify()
+ * runs, so a failed verification still leaves a durable Failed record
+ * rather than being silently dropped.
  */
 class InboundEmailRecorder
 {
     /**
-     * Create the Pending row, parse the request via the given handler, and
-     * advance the row through Receiving to Received/Failed accordingly.
+     * Create the Pending row, verify the request via the given handler,
+     * parse it, and advance the row through Receiving to Received/Failed
+     * accordingly.
      *
      * Returns the parsed InboundMessage, or null when the handler
      * legitimately determined the webhook was never an email (e.g. an SNS
@@ -44,6 +47,17 @@ class InboundEmailRecorder
     public function record(Request $request, string $provider, InboundWebhookHandler $handler, ?string $organizationAlias = null): ?InboundMessage
     {
         $inboundEmail = $this->createPending($request, $provider, $organizationAlias);
+
+        try {
+            $handler->verify($request);
+        } catch (Throwable $e) {
+            $inboundEmail->update([
+                'status' => InboundEmailStatus::Failed,
+                'error' => 'Verification failed',
+            ]);
+
+            throw $e;
+        }
 
         $inboundEmail->update(['status' => InboundEmailStatus::Receiving]);
 

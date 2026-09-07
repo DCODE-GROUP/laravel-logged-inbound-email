@@ -24,7 +24,7 @@ class MailgunInboundWebhookTest extends TestCase
             ->assertForbidden();
 
         Bus::assertNothingDispatched();
-        self::assertSame(0, InboundEmail::count());
+        $this->assertVerificationFailedRowRecorded();
     }
 
     public function test_rejects_invalid_signature(): void
@@ -36,7 +36,7 @@ class MailgunInboundWebhookTest extends TestCase
             ->assertForbidden();
 
         Bus::assertNothingDispatched();
-        self::assertSame(0, InboundEmail::count());
+        $this->assertVerificationFailedRowRecorded();
     }
 
     public function test_rejects_stale_timestamp(): void
@@ -50,7 +50,16 @@ class MailgunInboundWebhookTest extends TestCase
             ->assertForbidden();
 
         Bus::assertNothingDispatched();
-        self::assertSame(0, InboundEmail::count());
+        $this->assertVerificationFailedRowRecorded();
+    }
+
+    private function assertVerificationFailedRowRecorded(): void
+    {
+        self::assertSame(1, InboundEmail::count());
+
+        $inboundEmail = InboundEmail::sole();
+        self::assertSame(InboundEmailStatus::Failed, $inboundEmail->status);
+        self::assertSame('Verification failed', $inboundEmail->error);
     }
 
     public function test_dispatches_job_with_normalized_payload(): void

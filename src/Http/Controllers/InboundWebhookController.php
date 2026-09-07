@@ -47,7 +47,6 @@ class InboundWebhookController extends Controller
         $request->attributes->set('inbound_email.merged_provider_config', $merged);
 
         $handler = $this->factory->make($provider);
-        $handler->verify($request);
 
         $organizationInRoute = (bool) config('inbound-email.organization_in_route', false);
         $organizationAlias = $organizationInRoute ? $orgForPolicy : null;
