@@ -24,13 +24,13 @@ return new class extends Migration
             $table->string('subject')->nullable();
             $table->longText('text_content')->nullable();
             $table->longText('html_content')->nullable();
-            $table->string('message_id')->nullable();
+            $table->string('message_id')->nullable()->index();
             $table->timestamp('received_at')->nullable();
 
             // Raw `{orgAlias}` route segment, captured automatically when
             // multi-tenant routing (organization_in_route) is enabled. Null
             // otherwise. Distinct from tenant_id below.
-            $table->string('organization_alias')->nullable();
+            $table->string('organization_alias')->nullable()->index();
 
             // Reference to the consuming app's own tenant record. Never set
             // by the package itself; the host app populates this after the
@@ -42,7 +42,7 @@ return new class extends Migration
             }
 
             // Processing lifecycle (see InboundEmailStatus).
-            $table->string('status');
+            $table->string('status')->index();
             $table->text('error')->nullable();
 
             // Nullable polymorphic relations the package never populates;
@@ -54,10 +54,6 @@ return new class extends Migration
 
             $table->timestamps();
             $table->softDeletes();
-
-            $table->index('status');
-            $table->index('message_id');
-            $table->index('organization_alias');
         });
     }
 
