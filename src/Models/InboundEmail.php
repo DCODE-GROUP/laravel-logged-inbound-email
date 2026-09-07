@@ -6,10 +6,13 @@ use Dcodegroup\LaravelLoggedInboundEmail\Database\Factories\InboundEmailFactory;
 use Dcodegroup\LaravelLoggedInboundEmail\Enums\InboundEmailStatus;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\MorphTo;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Carbon;
+use LogicException;
+use RuntimeException;
 
 /**
  * Durable record of a received inbound email: both the raw webhook receipt
@@ -32,7 +35,7 @@ use Illuminate\Support\Carbon;
  * @property InboundEmailStatus $status
  * @property string|null $error
  * @property string|null $organization_alias
- * @property int|null $tenant_id
+ * @property int|null $tenant_id Only present when multi_tenant_enabled is true.
  * @property int|null $contactable_id
  * @property string|null $contactable_type
  * @property int|null $processable_id
@@ -88,6 +91,31 @@ class InboundEmail extends Model
     public function attachments(): HasMany
     {
         return $this->hasMany(InboundEmailAttachment::class);
+    }
+
+    /**
+     * The consuming app's tenant record, per config('inbound-email.tenant_model').
+     * Only available when config('inbound-email.multi_tenant_enabled') is true —
+     * the tenant_id column itself is opt-in at migration time. Never populated
+     * by the package itself.
+     *
+     * @return BelongsTo<Model, $this>
+     */
+    public function tenant(): BelongsTo
+    {
+        if (! (bool) config('inbound-email.multi_tenant_enabled')) {
+            throw new LogicException('Multi-tenancy is not enabled. Set inbound-email.multi_tenant_enabled to true and configure inbound-email.tenant_model.');
+        }
+
+        $tenantModel = config('inbound-email.tenant_model');
+
+        if (! is_string($tenantModel) || ! class_exists($tenantModel)) {
+            throw new RuntimeException(
+                'Config inbound-email.tenant_model must be a valid model class-string (FQCN). Set INBOUND_EMAIL_TENANT_MODEL or config inbound-email.tenant_model.'
+            );
+        }
+
+        return $this->belongsTo($tenantModel);
     }
 
     /**

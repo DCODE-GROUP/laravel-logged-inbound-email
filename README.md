@@ -66,6 +66,14 @@ Example: `POST https://your-app.test/webhooks/inbound/acme-corp/mailgun`
 
 **Prefix:** `INBOUND_EMAIL_ROUTE_PREFIX` or `config('inbound-email.route_prefix')` (no leading/trailing slashes required in env; the package trims as needed).
 
+### Tenant column and relationship (opt-in)
+
+By default the `inbound_emails` table has no `tenant_id` column at all. Set `INBOUND_EMAIL_MULTI_TENANT_ENABLED=true` (and `INBOUND_EMAIL_TENANT_MODEL` to your tenant model's FQCN) **before running `php artisan migrate`** in your app, and the migration adds a nullable, indexed `tenant_id` column, and `InboundEmail::tenant()` becomes available as a `belongsTo` relation to that model.
+
+The package never populates `tenant_id` itself — your app sets it on the row after it exists.
+
+**This is a one-time, initial-setup flag.** Flipping it after the table has already been migrated does not retroactively add or drop the column; write your own follow-up migration if you enable multi-tenancy later. Calling `tenant()` while the flag is off throws a `LogicException`.
+
 ---
 
 ## Configuration overview
@@ -75,6 +83,8 @@ Example: `POST https://your-app.test/webhooks/inbound/acme-corp/mailgun`
 | `INBOUND_EMAIL_ROUTE_PREFIX` | URL prefix for all inbound routes (default `webhooks/inbound`). |
 | `INBOUND_EMAIL_ORG_IN_ROUTE` | `true` = `{orgAlias}/{provider}` URLs; `false` = `{provider}` only. |
 | `INBOUND_EMAIL_ORG_ALIAS_PATTERN` | Regex (no delimiters) for `{orgAlias}` when org routing is on. |
+| `INBOUND_EMAIL_MULTI_TENANT_ENABLED` | `true` adds the `tenant_id` column/index at migration time and enables `InboundEmail::tenant()`. Default `false`. |
+| `INBOUND_EMAIL_TENANT_MODEL` | FQCN of your tenant model, used by `InboundEmail::tenant()`. |
 | `INBOUND_EMAIL_JOB` | FQCN of your queued job (implements `ProcessesInboundEmail`). Default: package `ProcessInboundEmailJob` (debug log only). |
 | `INBOUND_EMAIL_QUEUE_CONNECTION` | Optional queue connection for the dispatch. |
 | `INBOUND_EMAIL_QUEUE` | Optional queue name for the dispatch. |
