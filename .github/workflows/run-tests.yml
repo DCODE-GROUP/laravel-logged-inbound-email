@@ -22,8 +22,10 @@ jobs:
         include:
           - laravel: "12.*"
             testbench: "10.*"
+            pest: "^4.7"
           - laravel: "13.*"
             testbench: "11.*"
+            pest: "^5.1"
 
     name: PHP ${{ matrix.php }} - Laravel ${{ matrix.laravel }}
 
@@ -45,7 +47,7 @@ jobs:
 
       - name: Install dependencies
         run: |
-          composer require "laravel/framework:${{ matrix.laravel }}" "orchestra/testbench:${{ matrix.testbench }}" --no-interaction --no-update
+          composer require "laravel/framework:${{ matrix.laravel }}" "orchestra/testbench:${{ matrix.testbench }}" "pestphp/pest:${{ matrix.pest }}" --no-interaction --no-update
           composer update --prefer-stable --prefer-dist --no-interaction
 
       - name: Execute tests
