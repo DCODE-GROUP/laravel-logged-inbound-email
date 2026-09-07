@@ -49,4 +49,19 @@ class OrganizationInboundWebhookTest extends TestCase
         // Pattern requires first character alphanumeric (cannot start with hyphen).
         $this->post('/webhooks/inbound/-bad/mailgun', [])->assertNotFound();
     }
+
+    public function test_route_alias_wins_over_disagreeing_plus_addressed_recipient(): void
+    {
+        config(['inbound-email.tenant_plus_addressing_enabled' => true]);
+
+        $ts = (string) time();
+        $token = 'abc';
+        $sig = $this->mailgunSignature($ts, $token, 'test-mailgun-key');
+        $payload = $this->validMailgunPayload($ts, $token, $sig);
+        $payload['recipient'] = 'other-tenant+support@example.com';
+
+        $this->post('/webhooks/inbound/acme-corp/mailgun', $payload)->assertOk();
+
+        self::assertSame('acme-corp', InboundEmail::sole()->organization_alias);
+    }
 }

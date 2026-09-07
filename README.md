@@ -74,6 +74,14 @@ The package never populates `tenant_id` itself — your app sets it on the row a
 
 **This is a one-time, initial-setup flag.** Flipping it after the table has already been migrated does not retroactively add or drop the column; write your own follow-up migration if you enable multi-tenancy later. Calling `tenant()` while the flag is off returns `null` rather than a relation instance.
 
+### Plus-addressing tenant discovery
+
+An alternative to `organization_in_route` for setups where the webhook route isn't controllable (e.g. a fixed provider URL): identify the tenant from the recipient address itself, `{tenant_identifier}+{process}@domain`.
+
+Set `INBOUND_EMAIL_TENANT_PLUS_ADDRESSING_ENABLED=true` or `config(['inbound-email.tenant_plus_addressing_enabled' => true])`. Unlike `organization_in_route`, this is **not mutually exclusive** — both strategies can be enabled at the same time. When both produce a tenant identifier and they disagree, the route-derived value wins (plus-addressing is a fallback, not an override).
+
+The resolved identifier is stored on `InboundEmail::organization_alias`, same as route-based discovery.
+
 ---
 
 ## Configuration overview
@@ -85,6 +93,7 @@ The package never populates `tenant_id` itself — your app sets it on the row a
 | `INBOUND_EMAIL_ORG_ALIAS_PATTERN` | Regex (no delimiters) for `{orgAlias}` when org routing is on. |
 | `INBOUND_EMAIL_MULTI_TENANT_ENABLED` | `true` adds the `tenant_id` column/index at migration time and enables `InboundEmail::tenant()`. Default `false`. |
 | `INBOUND_EMAIL_TENANT_MODEL` | FQCN of your tenant model, used by `InboundEmail::tenant()`. |
+| `INBOUND_EMAIL_TENANT_PLUS_ADDRESSING_ENABLED` | `true` = also parse the tenant identifier from a plus-addressed recipient (`{tenant_identifier}+{process}@domain`). Can be combined with `INBOUND_EMAIL_ORG_IN_ROUTE`; the route value wins on disagreement. |
 | `INBOUND_EMAIL_JOB` | FQCN of your queued job (implements `ProcessesInboundEmail`). Default: package `ProcessInboundEmailJob` (debug log only). |
 | `INBOUND_EMAIL_QUEUE_CONNECTION` | Optional queue connection for the dispatch. |
 | `INBOUND_EMAIL_QUEUE` | Optional queue name for the dispatch. |

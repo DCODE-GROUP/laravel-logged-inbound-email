@@ -55,6 +55,20 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Plus-addressing tenant discovery
+    |--------------------------------------------------------------------------
+    |
+    | Enable identifying the tenant from the recipient address itself, e.g.
+    | `{tenant_identifier}+{process}@domain`. Unlike organization_in_route,
+    | this is not mutually exclusive with route-based discovery — both may be
+    | enabled at once. When both produce a tenant identifier and they
+    | disagree, the route-derived value wins.
+    |
+    */
+    'tenant_plus_addressing_enabled' => env('INBOUND_EMAIL_TENANT_PLUS_ADDRESSING_ENABLED', false),
+
+    /*
+    |--------------------------------------------------------------------------
     | Tenant model
     |--------------------------------------------------------------------------
     |

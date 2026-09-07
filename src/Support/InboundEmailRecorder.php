@@ -27,6 +27,10 @@ use Throwable;
  */
 class InboundEmailRecorder
 {
+    public function __construct(
+        private readonly PlusAddressTenantResolver $plusAddressTenantResolver = new PlusAddressTenantResolver,
+    ) {}
+
     /**
      * Create the Pending row, verify the request via the given handler,
      * parse it, and advance the row through Receiving to Received/Failed
@@ -39,8 +43,10 @@ class InboundEmailRecorder
      *
      * The given $organizationAlias should already be resolved by the caller
      * to null unless multi-tenant routing (`organization_in_route`) is
-     * enabled and the `{orgAlias}` route segment was present; this method
-     * simply stores whatever it is given.
+     * enabled and the `{orgAlias}` route segment was present. When null and
+     * plus-addressing is enabled, the tenant identifier is instead parsed
+     * from the recipient address once the message has been parsed — the
+     * route segment always wins when both are present and disagree.
      *
      * @throws Throwable re-thrown after marking the row Failed
      */
@@ -78,9 +84,26 @@ class InboundEmailRecorder
             return null;
         }
 
-        $this->markReceived($inboundEmail, $message);
+        $this->markReceived($inboundEmail, $message, $this->resolveTenantAlias($organizationAlias, $message));
 
         return $message;
+    }
+
+    /**
+     * Route-derived alias wins when present; otherwise fall back to
+     * plus-addressing (when enabled) parsed from the recipient address.
+     */
+    private function resolveTenantAlias(?string $organizationAlias, InboundMessage $message): ?string
+    {
+        if ($organizationAlias !== null) {
+            return $organizationAlias;
+        }
+
+        if (! (bool) config('inbound-email.tenant_plus_addressing_enabled', false)) {
+            return null;
+        }
+
+        return $this->plusAddressTenantResolver->resolve($message->to);
     }
 
     private function createPending(Request $request, string $provider, ?string $organizationAlias): InboundEmail
@@ -93,7 +116,7 @@ class InboundEmailRecorder
         ]);
     }
 
-    private function markReceived(InboundEmail $inboundEmail, InboundMessage $message): void
+    private function markReceived(InboundEmail $inboundEmail, InboundMessage $message, ?string $organizationAlias): void
     {
         $inboundEmail->update([
             'provider' => $message->provider,
@@ -106,6 +129,7 @@ class InboundEmailRecorder
             'text_content' => $message->text,
             'html_content' => $message->html,
             'message_id' => $this->extractMessageId($message),
+            'organization_alias' => $organizationAlias,
             'received_at' => Carbon::now(),
             'status' => InboundEmailStatus::Received,
         ]);
