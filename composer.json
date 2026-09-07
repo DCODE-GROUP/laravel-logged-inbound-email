@@ -1,6 +1,6 @@
 {
     "name": "dcodegroup/laravel-logged-inbound-email",
-    "description": "Multi-provider inbound email webhooks for Laravel (Mailgun, Postmark, SendGrid, SES, Mailpit, Resend) with logging and processing records for each inbound email.",
+    "description": "Multi-provider inbound email webhooks for Laravel (Mailgun, Postmark, SendGrid, SES, Mailpit, Resend) with logging and processing for every inbound email.",
     "type": "library",
     "license": "MIT",
     "authors": [
