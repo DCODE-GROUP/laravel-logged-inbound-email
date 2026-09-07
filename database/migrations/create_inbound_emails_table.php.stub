@@ -35,8 +35,11 @@ return new class extends Migration
             // Reference to the consuming app's own tenant record. Never set
             // by the package itself; the host app populates this after the
             // row exists, resolved against the model class it declares via
-            // the `tenant_model` config key.
-            $table->unsignedBigInteger('tenant_id')->nullable();
+            // the `tenant_model` config key. Opt-in: only added when
+            // multi_tenant_enabled is true at migrate time.
+            if (config('inbound-email.multi_tenant_enabled')) {
+                $table->foreignId('tenant_id')->nullable()->index();
+            }
 
             // Processing lifecycle (see InboundEmailStatus).
             $table->string('status');
@@ -55,7 +58,6 @@ return new class extends Migration
             $table->index('status');
             $table->index('message_id');
             $table->index('organization_alias');
-            $table->index('tenant_id');
         });
     }
 
