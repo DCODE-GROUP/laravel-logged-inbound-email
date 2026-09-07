@@ -1,15 +1,15 @@
 <?php
 
-namespace Touqeershafi\LaravelInboundEmail\Handlers;
+namespace Dcodegroup\LaravelLoggedInboundEmail\Handlers;
 
+use Dcodegroup\LaravelLoggedInboundEmail\Contracts\InboundWebhookHandler;
+use Dcodegroup\LaravelLoggedInboundEmail\InboundMessage;
+use Dcodegroup\LaravelLoggedInboundEmail\Support\ReadsInboundProviderConfig;
 use Illuminate\Http\Client\RequestException;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Http;
 use Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException;
 use Symfony\Component\HttpKernel\Exception\BadRequestHttpException;
-use Touqeershafi\LaravelInboundEmail\Contracts\InboundWebhookHandler;
-use Touqeershafi\LaravelInboundEmail\InboundMessage;
-use Touqeershafi\LaravelInboundEmail\Support\ReadsInboundProviderConfig;
 
 class MailpitHandler implements InboundWebhookHandler
 {

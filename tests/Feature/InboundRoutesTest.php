@@ -1,8 +1,8 @@
 <?php
 
-namespace Touqeershafi\LaravelInboundEmail\Tests\Feature;
+namespace Dcodegroup\LaravelLoggedInboundEmail\Tests\Feature;
 
-use Touqeershafi\LaravelInboundEmail\Tests\TestCase;
+use Dcodegroup\LaravelLoggedInboundEmail\Tests\TestCase;
 
 class InboundRoutesTest extends TestCase
 {

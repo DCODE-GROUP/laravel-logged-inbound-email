@@ -1,6 +1,6 @@
 <?php
 
-namespace Touqeershafi\LaravelInboundEmail\Support;
+namespace Dcodegroup\LaravelLoggedInboundEmail\Support;
 
 use OpenSSLAsymmetricKey;
 

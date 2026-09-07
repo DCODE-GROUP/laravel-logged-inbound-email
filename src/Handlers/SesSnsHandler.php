@@ -1,18 +1,18 @@
 <?php
 
-namespace Touqeershafi\LaravelInboundEmail\Handlers;
+namespace Dcodegroup\LaravelLoggedInboundEmail\Handlers;
 
+use Dcodegroup\LaravelLoggedInboundEmail\Contracts\InboundWebhookHandler;
+use Dcodegroup\LaravelLoggedInboundEmail\InboundMessage;
+use Dcodegroup\LaravelLoggedInboundEmail\Support\RawMimeParser;
+use Dcodegroup\LaravelLoggedInboundEmail\Support\ReadsInboundProviderConfig;
+use Dcodegroup\LaravelLoggedInboundEmail\Support\SnsMessageVerifier;
 use Illuminate\Http\Client\RequestException;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Storage;
 use Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException;
 use Symfony\Component\HttpKernel\Exception\BadRequestHttpException;
-use Touqeershafi\LaravelInboundEmail\Contracts\InboundWebhookHandler;
-use Touqeershafi\LaravelInboundEmail\InboundMessage;
-use Touqeershafi\LaravelInboundEmail\Support\RawMimeParser;
-use Touqeershafi\LaravelInboundEmail\Support\ReadsInboundProviderConfig;
-use Touqeershafi\LaravelInboundEmail\Support\SnsMessageVerifier;
 
 class SesSnsHandler implements InboundWebhookHandler
 {

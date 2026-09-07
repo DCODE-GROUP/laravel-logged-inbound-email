@@ -1,10 +1,11 @@
 <?php
 
-namespace Touqeershafi\LaravelInboundEmail\Tests\Feature;
+namespace Dcodegroup\LaravelLoggedInboundEmail\Tests\Feature;
 
+use Dcodegroup\LaravelLoggedInboundEmail\Jobs\DefaultProcessInboundEmailJob;
+use Dcodegroup\LaravelLoggedInboundEmail\Models\InboundEmail;
+use Dcodegroup\LaravelLoggedInboundEmail\Tests\TestCase;
 use Illuminate\Support\Facades\Bus;
-use Touqeershafi\LaravelInboundEmail\Jobs\DefaultProcessInboundEmailJob;
-use Touqeershafi\LaravelInboundEmail\Tests\TestCase;
 
 class OrganizationInboundWebhookTest extends TestCase
 {
@@ -31,6 +32,11 @@ class OrganizationInboundWebhookTest extends TestCase
                 && $job->message['provider'] === 'mailgun'
                 && ($job->message['subject'] ?? null) === 'Hello';
         });
+
+        $inboundEmail = InboundEmail::sole();
+
+        self::assertSame('acme-corp', $inboundEmail->organization_alias);
+        self::assertNull($inboundEmail->tenant_id);
     }
 
     public function test_unknown_provider_returns_404(): void

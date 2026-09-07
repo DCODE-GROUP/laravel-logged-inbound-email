@@ -1,10 +1,12 @@
 <?php
 
-namespace Touqeershafi\LaravelInboundEmail\Tests\Feature;
+namespace Dcodegroup\LaravelLoggedInboundEmail\Tests\Feature;
 
+use Dcodegroup\LaravelLoggedInboundEmail\Enums\InboundEmailStatus;
+use Dcodegroup\LaravelLoggedInboundEmail\Jobs\DefaultProcessInboundEmailJob;
+use Dcodegroup\LaravelLoggedInboundEmail\Models\InboundEmail;
+use Dcodegroup\LaravelLoggedInboundEmail\Tests\TestCase;
 use Illuminate\Support\Facades\Bus;
-use Touqeershafi\LaravelInboundEmail\Jobs\DefaultProcessInboundEmailJob;
-use Touqeershafi\LaravelInboundEmail\Tests\TestCase;
 
 class SendGridInboundWebhookTest extends TestCase
 {
@@ -14,12 +16,14 @@ class SendGridInboundWebhookTest extends TestCase
 
         Bus::fake();
 
-        $this->post('/webhooks/inbound/sendgrid', [
+        $payload = [
             'from' => 'sender@example.com',
             'to' => 'receiver@example.com',
             'subject' => 'SG subject',
             'text' => 'Hello SendGrid',
-        ])->assertOk();
+        ];
+
+        $this->post('/webhooks/inbound/sendgrid', $payload)->assertOk();
 
         Bus::assertDispatched(DefaultProcessInboundEmailJob::class, function (DefaultProcessInboundEmailJob $job): bool {
             $m = $job->message;
@@ -28,6 +32,15 @@ class SendGridInboundWebhookTest extends TestCase
                 && ($m['subject'] ?? null) === 'SG subject'
                 && ($m['text'] ?? null) === 'Hello SendGrid';
         });
+
+        self::assertSame(1, InboundEmail::count());
+
+        $inboundEmail = InboundEmail::sole();
+        self::assertSame(InboundEmailStatus::Received, $inboundEmail->status);
+        self::assertSame(json_encode($payload), $inboundEmail->payload);
+        self::assertSame('sendgrid', $inboundEmail->provider);
+        self::assertSame('SG subject', $inboundEmail->subject);
+        self::assertSame('Hello SendGrid', $inboundEmail->text_content);
     }
 
     public function test_rejects_when_verification_key_set_but_signature_headers_missing(): void
@@ -43,6 +56,7 @@ class SendGridInboundWebhookTest extends TestCase
         ])->assertForbidden();
 
         Bus::assertNothingDispatched();
+        self::assertSame(0, InboundEmail::count());
     }
 
     public function test_accepts_when_verification_headers_match(): void

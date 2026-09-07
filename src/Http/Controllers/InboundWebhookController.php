@@ -1,18 +1,19 @@
 <?php
 
-namespace Touqeershafi\LaravelInboundEmail\Http\Controllers;
+namespace Dcodegroup\LaravelLoggedInboundEmail\Http\Controllers;
 
+use Dcodegroup\LaravelLoggedInboundEmail\Contracts\InboundProviderConfigResolver;
+use Dcodegroup\LaravelLoggedInboundEmail\Contracts\InboundWebhookTenantPolicy;
+use Dcodegroup\LaravelLoggedInboundEmail\Contracts\ProcessesInboundEmail;
+use Dcodegroup\LaravelLoggedInboundEmail\InboundWebhookHandlerFactory;
+use Dcodegroup\LaravelLoggedInboundEmail\Jobs\DefaultProcessInboundEmailJob;
+use Dcodegroup\LaravelLoggedInboundEmail\Support\InboundEmailRecorder;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Routing\Controller;
 use RuntimeException;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
-use Touqeershafi\LaravelInboundEmail\Contracts\InboundProviderConfigResolver;
-use Touqeershafi\LaravelInboundEmail\Contracts\InboundWebhookTenantPolicy;
-use Touqeershafi\LaravelInboundEmail\Contracts\ProcessesInboundEmail;
-use Touqeershafi\LaravelInboundEmail\InboundWebhookHandlerFactory;
-use Touqeershafi\LaravelInboundEmail\Jobs\DefaultProcessInboundEmailJob;
 
 class InboundWebhookController extends Controller
 {
@@ -20,6 +21,7 @@ class InboundWebhookController extends Controller
         private readonly InboundWebhookHandlerFactory $factory,
         private readonly InboundProviderConfigResolver $providerConfigResolver,
         private readonly InboundWebhookTenantPolicy $tenantPolicy,
+        private readonly InboundEmailRecorder $recorder,
     ) {}
 
     public function handle(Request $request, string $provider): Response
@@ -46,7 +48,11 @@ class InboundWebhookController extends Controller
 
         $handler = $this->factory->make($provider);
         $handler->verify($request);
-        $message = $handler->toInboundMessage($request);
+
+        $organizationInRoute = (bool) config('inbound-email.organization_in_route', false);
+        $organizationAlias = $organizationInRoute ? $orgForPolicy : null;
+
+        $message = $this->recorder->record($request, $provider, $handler, $organizationAlias);
 
         if ($message !== null) {
             $this->dispatchInboundEmailJob($message->toArray(), $orgAlias);

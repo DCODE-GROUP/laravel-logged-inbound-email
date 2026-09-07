@@ -1,18 +1,26 @@
 <?php
 
-namespace Touqeershafi\LaravelInboundEmail\Tests;
+namespace Dcodegroup\LaravelLoggedInboundEmail\Tests;
 
+use Dcodegroup\LaravelLoggedInboundEmail\InboundEmailServiceProvider;
+use Orchestra\Testbench\Concerns\WithWorkbench;
 use Orchestra\Testbench\TestCase as Orchestra;
 use Svix\Webhook;
-use Touqeershafi\LaravelInboundEmail\InboundEmailServiceProvider;
 
 abstract class TestCase extends Orchestra
 {
+    use WithWorkbench;
+
     protected function getPackageProviders($app): array
     {
         return [
             InboundEmailServiceProvider::class,
         ];
+    }
+
+    protected function defineDatabaseMigrations(): void
+    {
+        $this->loadMigrationsFrom(__DIR__.'/../workbench/database/migrations');
     }
 
     protected function defineEnvironment($app): void

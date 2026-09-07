@@ -1,8 +1,8 @@
 <?php
 
-namespace Touqeershafi\LaravelInboundEmail\Support;
+namespace Dcodegroup\LaravelLoggedInboundEmail\Support;
 
-use Touqeershafi\LaravelInboundEmail\Contracts\InboundWebhookTenantPolicy;
+use Dcodegroup\LaravelLoggedInboundEmail\Contracts\InboundWebhookTenantPolicy;
 
 class AllowAllInboundWebhookTenantPolicy implements InboundWebhookTenantPolicy
 {

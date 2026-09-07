@@ -1,6 +1,6 @@
 <?php
 
-namespace Touqeershafi\LaravelInboundEmail;
+namespace Dcodegroup\LaravelLoggedInboundEmail;
 
 use Illuminate\Contracts\Support\Arrayable;
 use Illuminate\Contracts\Support\Jsonable;

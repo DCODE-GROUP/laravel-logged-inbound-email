@@ -1,14 +1,14 @@
 <?php
 
-namespace Touqeershafi\LaravelInboundEmail\Jobs;
+namespace Dcodegroup\LaravelLoggedInboundEmail\Jobs;
 
+use Dcodegroup\LaravelLoggedInboundEmail\Contracts\ProcessesInboundEmail;
+use Dcodegroup\LaravelLoggedInboundEmail\InboundMessage;
 use Illuminate\Bus\Queueable;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
 use Illuminate\Support\Facades\Log;
-use Touqeershafi\LaravelInboundEmail\Contracts\ProcessesInboundEmail;
-use Touqeershafi\LaravelInboundEmail\InboundMessage;
 
 /**
  * Default no-op handler. Replace via config `inbound-email.job` or by rebinding

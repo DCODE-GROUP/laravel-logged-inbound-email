@@ -1,16 +1,16 @@
 <?php
 
-namespace Touqeershafi\LaravelInboundEmail;
+namespace Dcodegroup\LaravelLoggedInboundEmail;
 
+use Dcodegroup\LaravelLoggedInboundEmail\Contracts\InboundWebhookHandler;
+use Dcodegroup\LaravelLoggedInboundEmail\Handlers\MailgunHandler;
+use Dcodegroup\LaravelLoggedInboundEmail\Handlers\MailpitHandler;
+use Dcodegroup\LaravelLoggedInboundEmail\Handlers\PostmarkHandler;
+use Dcodegroup\LaravelLoggedInboundEmail\Handlers\ResendHandler;
+use Dcodegroup\LaravelLoggedInboundEmail\Handlers\SendGridHandler;
+use Dcodegroup\LaravelLoggedInboundEmail\Handlers\SesSnsHandler;
 use Illuminate\Contracts\Foundation\Application;
 use InvalidArgumentException;
-use Touqeershafi\LaravelInboundEmail\Contracts\InboundWebhookHandler;
-use Touqeershafi\LaravelInboundEmail\Handlers\MailgunHandler;
-use Touqeershafi\LaravelInboundEmail\Handlers\MailpitHandler;
-use Touqeershafi\LaravelInboundEmail\Handlers\PostmarkHandler;
-use Touqeershafi\LaravelInboundEmail\Handlers\ResendHandler;
-use Touqeershafi\LaravelInboundEmail\Handlers\SendGridHandler;
-use Touqeershafi\LaravelInboundEmail\Handlers\SesSnsHandler;
 
 class InboundWebhookHandlerFactory
 {

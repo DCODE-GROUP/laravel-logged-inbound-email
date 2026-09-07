@@ -1,0 +1,66 @@
+<?php
+
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
+
+return new class extends Migration
+{
+    public function up(): void
+    {
+        Schema::create('inbound_emails', function (Blueprint $table) {
+            $table->id();
+
+            // Raw webhook body exactly as received, unmodified.
+            $table->longText('payload');
+
+            // Normalized, parsed fields.
+            $table->string('provider');
+            $table->json('from')->nullable();
+            $table->json('to')->nullable();
+            $table->json('cc')->nullable();
+            $table->json('bcc')->nullable();
+            $table->json('reply_to')->nullable();
+            $table->string('subject')->nullable();
+            $table->longText('text_content')->nullable();
+            $table->longText('html_content')->nullable();
+            $table->string('message_id')->nullable();
+            $table->timestamp('received_at')->nullable();
+
+            // Raw `{orgAlias}` route segment, captured automatically when
+            // multi-tenant routing (organization_in_route) is enabled. Null
+            // otherwise. Distinct from tenant_id below.
+            $table->string('organization_alias')->nullable();
+
+            // Reference to the consuming app's own tenant record. Never set
+            // by the package itself; the host app populates this after the
+            // row exists, resolved against the model class it declares via
+            // the `tenant_model` config key.
+            $table->unsignedBigInteger('tenant_id')->nullable();
+
+            // Processing lifecycle (see InboundEmailStatus).
+            $table->string('status');
+            $table->text('error')->nullable();
+
+            // Nullable polymorphic relations the package never populates;
+            // only the consuming app sets these, to link the email to
+            // whichever of its own models represents the sender and/or
+            // whatever business record the email produced.
+            $table->nullableMorphs('contactable');
+            $table->nullableMorphs('processable');
+
+            $table->timestamps();
+            $table->softDeletes();
+
+            $table->index('status');
+            $table->index('message_id');
+            $table->index('organization_alias');
+            $table->index('tenant_id');
+        });
+    }
+
+    public function down(): void
+    {
+        Schema::dropIfExists('inbound_emails');
+    }
+};

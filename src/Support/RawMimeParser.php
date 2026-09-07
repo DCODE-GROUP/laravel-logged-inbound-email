@@ -1,6 +1,6 @@
 <?php
 
-namespace Touqeershafi\LaravelInboundEmail\Support;
+namespace Dcodegroup\LaravelLoggedInboundEmail\Support;
 
 /**
  * Lightweight raw-MIME-string parser for the common inbound email cases.

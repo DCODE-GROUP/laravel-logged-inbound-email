@@ -1,10 +1,10 @@
 <?php
 
-namespace Touqeershafi\LaravelInboundEmail\Contracts;
+namespace Dcodegroup\LaravelLoggedInboundEmail\Contracts;
 
+use Dcodegroup\LaravelLoggedInboundEmail\InboundMessage;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpKernel\Exception\HttpException;
-use Touqeershafi\LaravelInboundEmail\InboundMessage;
 
 interface InboundWebhookHandler
 {

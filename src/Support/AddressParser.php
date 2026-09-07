@@ -1,6 +1,6 @@
 <?php
 
-namespace Touqeershafi\LaravelInboundEmail\Support;
+namespace Dcodegroup\LaravelLoggedInboundEmail\Support;
 
 /**
  * Parses RFC-5321-style address strings ("Name <email@example.com>") into

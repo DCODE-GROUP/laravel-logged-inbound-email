@@ -1,7 +1,7 @@
 <?php
 
+use Dcodegroup\LaravelLoggedInboundEmail\Http\Controllers\InboundWebhookController;
 use Illuminate\Support\Facades\Route;
-use Touqeershafi\LaravelInboundEmail\Http\Controllers\InboundWebhookController;
 
 $orgInRoute = (bool) config('inbound-email.organization_in_route', false);
 $orgPattern = (string) config('inbound-email.organization_alias_pattern', '[a-zA-Z0-9][a-zA-Z0-9._-]*');
