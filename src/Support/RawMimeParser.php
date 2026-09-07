@@ -2,15 +2,15 @@
 
 namespace Dcodegroup\LaravelLoggedInboundEmail\Support;
 
+use ZBateson\MailMimeParser\Header\AddressHeader;
+use ZBateson\MailMimeParser\Header\HeaderConsts;
+use ZBateson\MailMimeParser\Header\Part\AddressPart;
+use ZBateson\MailMimeParser\IMessage;
+use ZBateson\MailMimeParser\Message;
+
 /**
- * Lightweight raw-MIME-string parser for the common inbound email cases.
- *
- * Covers single-part and multipart/alternative|mixed messages.
- * Binary attachments and nested multipart structures are passed through as
- * base64 blobs without content decoding.
- *
- * For production workloads that require full MIME support (S/MIME, PGP,
- * complex nested multipart), install the `mailparse` PECL extension.
+ * Parses a raw MIME string (headers + body) into the canonical array shape
+ * used by InboundMessage, via zbateson/mail-mime-parser.
  */
 final class RawMimeParser
 {
@@ -40,32 +40,18 @@ final class RawMimeParser
 
     private function __construct(string $raw)
     {
-        [$headerBlock, $bodyBlock] = self::splitHeadersBody($raw);
+        $message = Message::from($raw, false);
 
-        $this->headers = self::parseHeaderBlock($headerBlock);
+        $this->from = $this->firstAddress($message);
+        $this->to = $this->addressList($message, HeaderConsts::TO);
+        $this->cc = $this->addressList($message, HeaderConsts::CC);
+        $this->bcc = $this->addressList($message, HeaderConsts::BCC);
+        $this->subject = $message->getSubject();
+        $this->text = $message->getTextContent();
+        $this->html = $message->getHtmlContent();
 
-        $this->from = AddressParser::parseOne($this->headers['From'] ?? '');
-        $this->to = AddressParser::parseList($this->headers['To'] ?? '');
-        $this->cc = AddressParser::parseList($this->headers['Cc'] ?? '');
-        $this->bcc = AddressParser::parseList($this->headers['Bcc'] ?? '');
-        $this->subject = $this->headers['Subject'] ?? null;
-
-        $contentType = $this->headers['Content-Type'] ?? 'text/plain';
-
-        if (preg_match('/boundary="?([^";\s]+)"?/i', $contentType, $m)) {
-            ['text' => $text, 'html' => $html, 'attachments' => $attachments] =
-                self::parseMultipart($bodyBlock, $m[1]);
-
-            $this->text = $text;
-            $this->html = $html;
-            $this->attachments = $attachments;
-        } else {
-            $decoded = self::decodeBody($bodyBlock, $this->headers['Content-Transfer-Encoding'] ?? null);
-
-            $this->text = stripos($contentType, 'text/html') !== false ? null : $decoded;
-            $this->html = stripos($contentType, 'text/html') !== false ? $decoded : null;
-            $this->attachments = [];
-        }
+        $this->attachments = $this->parseAttachments($message);
+        $this->headers = $this->parseHeaders($message);
     }
 
     public static function parse(string $raw): self
@@ -76,115 +62,78 @@ final class RawMimeParser
     // -------------------------------------------------------------------------
 
     /**
-     * @return array{0: string, 1: string}
+     * @return array{email: string, name: ?string}|null
      */
-    private static function splitHeadersBody(string $raw): array
+    private function firstAddress(IMessage $message): ?array
     {
-        foreach (["\r\n\r\n", "\n\n"] as $sep) {
-            $pos = strpos($raw, $sep);
-            if ($pos !== false) {
-                return [substr($raw, 0, $pos), substr($raw, $pos + strlen($sep))];
-            }
+        $header = $message->getHeader(HeaderConsts::FROM);
+        if (! $header instanceof AddressHeader) {
+            return null;
         }
 
-        return [$raw, ''];
+        $addresses = $header->getAddresses();
+        if ($addresses === []) {
+            return null;
+        }
+
+        return $this->addressPartToArray($addresses[0]);
+    }
+
+    /**
+     * @return array<int, array{email: string, name: ?string}>
+     */
+    private function addressList(IMessage $message, string $headerName): array
+    {
+        $header = $message->getHeader($headerName);
+        if (! $header instanceof AddressHeader) {
+            return [];
+        }
+
+        return array_map(
+            fn (AddressPart $address): array => $this->addressPartToArray($address),
+            $header->getAddresses(),
+        );
+    }
+
+    /**
+     * @return array{email: string, name: ?string}
+     */
+    private function addressPartToArray(AddressPart $address): array
+    {
+        $name = $address->getName();
+
+        return ['email' => $address->getEmail(), 'name' => $name !== '' ? $name : null];
+    }
+
+    /**
+     * @return array<int, array{filename: string, content_type: ?string, content_base64: string}>
+     */
+    private function parseAttachments(IMessage $message): array
+    {
+        $out = [];
+
+        foreach ($message->getAllAttachmentParts() as $part) {
+            $out[] = [
+                'filename' => $part->getFilename() ?? 'attachment',
+                'content_type' => $part->getContentType(),
+                'content_base64' => base64_encode((string) $part->getBinaryContentStream()),
+            ];
+        }
+
+        return $out;
     }
 
     /**
      * @return array<string, string>
      */
-    private static function parseHeaderBlock(string $block): array
+    private function parseHeaders(IMessage $message): array
     {
-        // Unfold multi-line headers per RFC 5322
-        $block = preg_replace('/\r?\n[ \t]+/', ' ', $block) ?? $block;
+        $out = [];
 
-        $headers = [];
-
-        $lines = preg_split('/\r?\n/', $block);
-        foreach ($lines !== false ? $lines : [] as $line) {
-            $colon = strpos($line, ':');
-            if ($colon === false) {
-                continue;
-            }
-
-            $name = trim(substr($line, 0, $colon));
-            $value = trim(substr($line, $colon + 1));
-
-            if ($name !== '') {
-                $headers[$name] = $value;
-            }
+        foreach ($message->getRawHeaders() as [$name, $value]) {
+            $out[$name] = $value;
         }
 
-        return $headers;
-    }
-
-    /**
-     * @return array{text: ?string, html: ?string, attachments: array<int, array{filename: string, content_type: ?string, content_base64: string}>}
-     */
-    private static function parseMultipart(string $body, string $boundary): array
-    {
-        $text = null;
-        $html = null;
-        $attachments = [];
-
-        $delimiter = '--'.$boundary;
-        $rawParts = explode($delimiter, $body);
-
-        foreach ($rawParts as $part) {
-            $part = ltrim($part, "\r\n");
-            if ($part === '' || $part === '--' || $part === "--\r\n" || $part === "--\n") {
-                continue;
-            }
-
-            [$partHeaders, $partBody] = self::splitHeadersBody($part);
-            $ph = self::parseHeaderBlock($partHeaders);
-            $partCT = $ph['Content-Type'] ?? 'text/plain';
-            $encoding = $ph['Content-Transfer-Encoding'] ?? null;
-            $disposition = $ph['Content-Disposition'] ?? '';
-
-            // Recurse into nested multipart
-            if (preg_match('/boundary="?([^";\s]+)"?/i', $partCT, $m)) {
-                $nested = self::parseMultipart($partBody, $m[1]);
-                $text = $text ?? $nested['text'];
-                $html = $html ?? $nested['html'];
-                $attachments = array_merge($attachments, $nested['attachments']);
-
-                continue;
-            }
-
-            $decoded = self::decodeBody($partBody, $encoding);
-
-            if (stripos($disposition, 'attachment') !== false) {
-                preg_match('/filename\*?="?([^";\s]+)"?/i', $disposition, $fn);
-                $filename = $fn[1] ?? 'attachment';
-
-                $attachments[] = [
-                    'filename' => $filename,
-                    'content_type' => trim(explode(';', $partCT)[0]),
-                    'content_base64' => base64_encode($decoded),
-                ];
-
-                continue;
-            }
-
-            if (stripos($partCT, 'text/html') !== false) {
-                $html = $html ?? $decoded;
-            } elseif (stripos($partCT, 'text/plain') !== false) {
-                $text = $text ?? $decoded;
-            }
-        }
-
-        return ['text' => $text, 'html' => $html, 'attachments' => $attachments];
-    }
-
-    private static function decodeBody(string $body, ?string $encoding): string
-    {
-        $enc = strtolower(trim($encoding ?? ''));
-
-        return match ($enc) {
-            'base64' => (string) base64_decode(str_replace(["\r", "\n"], '', $body), true),
-            'quoted-printable' => quoted_printable_decode($body),
-            default => $body,
-        };
+        return $out;
     }
 }
