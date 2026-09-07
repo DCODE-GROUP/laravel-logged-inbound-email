@@ -3,6 +3,7 @@
 namespace Dcodegroup\LaravelLoggedInboundEmail\Handlers;
 
 use Dcodegroup\LaravelLoggedInboundEmail\Contracts\InboundWebhookHandler;
+use Dcodegroup\LaravelLoggedInboundEmail\Enums\Provider;
 use Dcodegroup\LaravelLoggedInboundEmail\InboundMessage;
 use Dcodegroup\LaravelLoggedInboundEmail\Support\AddressParser;
 use Dcodegroup\LaravelLoggedInboundEmail\Support\ReadsInboundProviderConfig;
@@ -17,7 +18,7 @@ class MailgunHandler implements InboundWebhookHandler
 
     public function verify(Request $request): void
     {
-        $signingKey = $this->inboundProviderSettings($request, 'mailgun')['signing_key'] ?? null;
+        $signingKey = $this->inboundProviderSettings($request, Provider::Mailgun)['signing_key'] ?? null;
         if (! is_string($signingKey) || $signingKey === '') {
             throw new AccessDeniedHttpException('Mailgun signing key is not configured.');
         }
@@ -48,7 +49,7 @@ class MailgunHandler implements InboundWebhookHandler
         $headers = $this->parseHeaders($request);
 
         return new InboundMessage(
-            provider: 'mailgun',
+            provider: Provider::Mailgun,
             from: $from,
             to: $to,
             subject: $this->stringInput($request, 'subject'),

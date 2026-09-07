@@ -1,5 +1,6 @@
 <?php
 
+use Dcodegroup\LaravelLoggedInboundEmail\Enums\Provider;
 use Dcodegroup\LaravelLoggedInboundEmail\Http\Controllers\InboundWebhookController;
 use Illuminate\Support\Facades\Route;
 
@@ -9,8 +10,8 @@ $orgPattern = (string) config('inbound-email.organization_alias_pattern', '[a-zA
 if ($orgInRoute) {
     Route::post('{orgAlias}/{provider}', [InboundWebhookController::class, 'handleForOrganization'])
         ->where('orgAlias', $orgPattern)
-        ->whereIn('provider', ['mailgun', 'postmark', 'sendgrid', 'ses', 'mailpit', 'resend']);
+        ->whereIn('provider', Provider::values());
 } else {
     Route::post('{provider}', [InboundWebhookController::class, 'handle'])
-        ->whereIn('provider', ['mailgun', 'postmark', 'sendgrid', 'ses', 'mailpit', 'resend']);
+        ->whereIn('provider', Provider::values());
 }

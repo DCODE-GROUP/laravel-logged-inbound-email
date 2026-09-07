@@ -2,6 +2,7 @@
 
 namespace Dcodegroup\LaravelLoggedInboundEmail;
 
+use Dcodegroup\LaravelLoggedInboundEmail\Enums\Provider;
 use Illuminate\Contracts\Support\Arrayable;
 use Illuminate\Contracts\Support\Jsonable;
 
@@ -26,7 +27,7 @@ class InboundMessage implements Arrayable, Jsonable
      * @param  array<string, mixed>  $metadata
      */
     public function __construct(
-        public readonly string $provider,
+        public readonly Provider $provider,
         public readonly ?array $from,
         public readonly array $to,
         public readonly array $cc = [],
@@ -49,7 +50,7 @@ class InboundMessage implements Arrayable, Jsonable
     public static function fromArray(array $data): self
     {
         return new self(
-            provider: (string) ($data['provider'] ?? ''),
+            provider: Provider::from((string) ($data['provider'] ?? '')),
             from: is_array($data['from'] ?? null) ? $data['from'] : null,
             to: is_array($data['to'] ?? null) ? $data['to'] : [],
             cc: is_array($data['cc'] ?? null) ? $data['cc'] : [],
@@ -71,7 +72,7 @@ class InboundMessage implements Arrayable, Jsonable
     public function toArray(): array
     {
         return [
-            'provider' => $this->provider,
+            'provider' => $this->provider->value,
             'from' => $this->from,
             'to' => $this->to,
             'cc' => $this->cc,
