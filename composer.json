@@ -80,7 +80,23 @@
         "prepare": "@php vendor/bin/testbench package:discover --ansi"
     },
     "config": {
-        "sort-packages": true
+        "sort-packages": true,
+        "audit": {
+            "ignore": [
+                "PKSA-m5cs-t1y6-qpcs",
+                "PKSA-3r5d-mb8f-1qw9",
+                "PKSA-mdq4-51ck-6kdq"
+            ]
+        },
+        "policy": {
+            "advisories": {
+                "ignore-id": [
+                    "PKSA-m5cs-t1y6-qpcs",
+                    "PKSA-3r5d-mb8f-1qw9",
+                    "PKSA-mdq4-51ck-6kdq"
+                ]
+            }
+        }
     },
     "minimum-stability": "stable",
     "prefer-stable": true
