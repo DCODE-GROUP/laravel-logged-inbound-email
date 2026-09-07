@@ -2,7 +2,7 @@
 
 namespace Dcodegroup\LaravelLoggedInboundEmail\Tests\Feature;
 
-use Dcodegroup\LaravelLoggedInboundEmail\Jobs\DefaultProcessInboundEmailJob;
+use Dcodegroup\LaravelLoggedInboundEmail\Jobs\ProcessInboundEmailJob;
 use Dcodegroup\LaravelLoggedInboundEmail\Models\InboundEmail;
 use Dcodegroup\LaravelLoggedInboundEmail\Tests\TestCase;
 use Illuminate\Support\Facades\Bus;
@@ -27,7 +27,7 @@ class OrganizationInboundWebhookTest extends TestCase
         $this->post('/webhooks/inbound/acme-corp/mailgun', $this->validMailgunPayload($ts, $token, $sig))
             ->assertOk();
 
-        Bus::assertDispatched(DefaultProcessInboundEmailJob::class, function (DefaultProcessInboundEmailJob $job): bool {
+        Bus::assertDispatched(ProcessInboundEmailJob::class, function (ProcessInboundEmailJob $job): bool {
             return $job->orgAlias === 'acme-corp'
                 && $job->message['provider'] === 'mailgun'
                 && ($job->message['subject'] ?? null) === 'Hello';

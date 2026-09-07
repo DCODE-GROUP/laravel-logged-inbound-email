@@ -3,7 +3,7 @@
 namespace Dcodegroup\LaravelLoggedInboundEmail\Tests\Feature;
 
 use Dcodegroup\LaravelLoggedInboundEmail\Enums\InboundEmailStatus;
-use Dcodegroup\LaravelLoggedInboundEmail\Jobs\DefaultProcessInboundEmailJob;
+use Dcodegroup\LaravelLoggedInboundEmail\Jobs\ProcessInboundEmailJob;
 use Dcodegroup\LaravelLoggedInboundEmail\Models\InboundEmail;
 use Dcodegroup\LaravelLoggedInboundEmail\Models\InboundEmailAttachment;
 use Dcodegroup\LaravelLoggedInboundEmail\Tests\TestCase;
@@ -65,7 +65,7 @@ class MailgunInboundWebhookTest extends TestCase
         $this->post('/webhooks/inbound/mailgun', $payload)
             ->assertOk();
 
-        Bus::assertDispatched(DefaultProcessInboundEmailJob::class, function (DefaultProcessInboundEmailJob $job): bool {
+        Bus::assertDispatched(ProcessInboundEmailJob::class, function (ProcessInboundEmailJob $job): bool {
             return $job->message['provider'] === 'mailgun'
                 && ($job->message['subject'] ?? null) === 'Hello'
                 && ($job->message['text'] ?? null) === 'Test body';

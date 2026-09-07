@@ -3,7 +3,7 @@
 namespace Dcodegroup\LaravelLoggedInboundEmail\Tests\Feature;
 
 use Dcodegroup\LaravelLoggedInboundEmail\Enums\InboundEmailStatus;
-use Dcodegroup\LaravelLoggedInboundEmail\Jobs\DefaultProcessInboundEmailJob;
+use Dcodegroup\LaravelLoggedInboundEmail\Jobs\ProcessInboundEmailJob;
 use Dcodegroup\LaravelLoggedInboundEmail\Models\InboundEmail;
 use Dcodegroup\LaravelLoggedInboundEmail\Tests\TestCase;
 use Illuminate\Support\Facades\Bus;
@@ -67,7 +67,7 @@ class MailpitInboundWebhookTest extends TestCase
 
         $this->postJson('/webhooks/inbound/mailpit', ['ID' => 'mp-1'])->assertOk();
 
-        Bus::assertDispatched(DefaultProcessInboundEmailJob::class, function (DefaultProcessInboundEmailJob $job): bool {
+        Bus::assertDispatched(ProcessInboundEmailJob::class, function (ProcessInboundEmailJob $job): bool {
             $m = $job->message;
 
             return ($m['provider'] ?? null) === 'mailpit'
@@ -109,6 +109,6 @@ class MailpitInboundWebhookTest extends TestCase
 
         $this->postJson('/webhooks/inbound/mailpit', ['id' => 'mp-2'])->assertOk();
 
-        Bus::assertDispatched(DefaultProcessInboundEmailJob::class);
+        Bus::assertDispatched(ProcessInboundEmailJob::class);
     }
 }

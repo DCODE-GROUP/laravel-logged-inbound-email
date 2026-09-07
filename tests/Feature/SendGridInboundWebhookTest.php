@@ -3,7 +3,7 @@
 namespace Dcodegroup\LaravelLoggedInboundEmail\Tests\Feature;
 
 use Dcodegroup\LaravelLoggedInboundEmail\Enums\InboundEmailStatus;
-use Dcodegroup\LaravelLoggedInboundEmail\Jobs\DefaultProcessInboundEmailJob;
+use Dcodegroup\LaravelLoggedInboundEmail\Jobs\ProcessInboundEmailJob;
 use Dcodegroup\LaravelLoggedInboundEmail\Models\InboundEmail;
 use Dcodegroup\LaravelLoggedInboundEmail\Tests\TestCase;
 use Illuminate\Support\Facades\Bus;
@@ -25,7 +25,7 @@ class SendGridInboundWebhookTest extends TestCase
 
         $this->post('/webhooks/inbound/sendgrid', $payload)->assertOk();
 
-        Bus::assertDispatched(DefaultProcessInboundEmailJob::class, function (DefaultProcessInboundEmailJob $job): bool {
+        Bus::assertDispatched(ProcessInboundEmailJob::class, function (ProcessInboundEmailJob $job): bool {
             $m = $job->message;
 
             return ($m['provider'] ?? null) === 'sendgrid'
@@ -77,7 +77,7 @@ class SendGridInboundWebhookTest extends TestCase
             'CONTENT_TYPE' => 'application/x-www-form-urlencoded',
         ], $body)->assertOk();
 
-        Bus::assertDispatched(DefaultProcessInboundEmailJob::class);
+        Bus::assertDispatched(ProcessInboundEmailJob::class);
     }
 
     public function test_includes_raw_email_in_metadata_when_present(): void
@@ -95,7 +95,7 @@ class SendGridInboundWebhookTest extends TestCase
             'email' => $raw,
         ])->assertOk();
 
-        Bus::assertDispatched(DefaultProcessInboundEmailJob::class, function (DefaultProcessInboundEmailJob $job) use ($raw): bool {
+        Bus::assertDispatched(ProcessInboundEmailJob::class, function (ProcessInboundEmailJob $job) use ($raw): bool {
             return ($job->message['metadata']['raw_email'] ?? null) === $raw;
         });
     }
