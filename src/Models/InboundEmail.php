@@ -11,7 +11,6 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\MorphTo;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Carbon;
-use LogicException;
 use RuntimeException;
 
 /**
@@ -95,16 +94,16 @@ class InboundEmail extends Model
 
     /**
      * The consuming app's tenant record, per config('inbound-email.tenant_model').
-     * Only available when config('inbound-email.multi_tenant_enabled') is true —
-     * the tenant_id column itself is opt-in at migration time. Never populated
-     * by the package itself.
+     * Returns null when config('inbound-email.multi_tenant_enabled') is false —
+     * the tenant_id column itself is opt-in at migration time, so there is no
+     * relation to build. Never populated by the package itself.
      *
-     * @return BelongsTo<Model, $this>
+     * @return BelongsTo<Model, $this>|null
      */
-    public function tenant(): BelongsTo
+    public function tenant(): ?BelongsTo
     {
         if (! (bool) config('inbound-email.multi_tenant_enabled')) {
-            throw new LogicException('Multi-tenancy is not enabled. Set inbound-email.multi_tenant_enabled to true and configure inbound-email.tenant_model.');
+            return null;
         }
 
         $tenantModel = config('inbound-email.tenant_model');

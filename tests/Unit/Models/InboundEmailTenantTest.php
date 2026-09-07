@@ -5,7 +5,6 @@ namespace Dcodegroup\LaravelLoggedInboundEmail\Tests\Unit\Models;
 use Dcodegroup\LaravelLoggedInboundEmail\Models\InboundEmail;
 use Dcodegroup\LaravelLoggedInboundEmail\Tests\TestCase;
 use Illuminate\Support\Facades\Schema;
-use LogicException;
 
 class InboundEmailTenantTest extends TestCase
 {
@@ -14,12 +13,10 @@ class InboundEmailTenantTest extends TestCase
         self::assertFalse(Schema::hasColumn('inbound_emails', 'tenant_id'));
     }
 
-    public function test_tenant_relationship_throws_when_multi_tenancy_is_disabled(): void
+    public function test_tenant_relationship_returns_null_when_multi_tenancy_is_disabled(): void
     {
         $inboundEmail = InboundEmail::factory()->create();
 
-        $this->expectException(LogicException::class);
-
-        $inboundEmail->tenant();
+        self::assertNull($inboundEmail->tenant());
     }
 }

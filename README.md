@@ -72,7 +72,7 @@ By default the `inbound_emails` table has no `tenant_id` column at all. Set `INB
 
 The package never populates `tenant_id` itself — your app sets it on the row after it exists.
 
-**This is a one-time, initial-setup flag.** Flipping it after the table has already been migrated does not retroactively add or drop the column; write your own follow-up migration if you enable multi-tenancy later. Calling `tenant()` while the flag is off throws a `LogicException`.
+**This is a one-time, initial-setup flag.** Flipping it after the table has already been migrated does not retroactively add or drop the column; write your own follow-up migration if you enable multi-tenancy later. Calling `tenant()` while the flag is off returns `null` rather than a relation instance.
 
 ---
 
