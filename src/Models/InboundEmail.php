@@ -108,10 +108,14 @@ class InboundEmail extends Model
 
         $tenantModel = config('inbound-email.tenant_model');
 
-        if (! is_string($tenantModel) || ! class_exists($tenantModel)) {
+        if (! is_string($tenantModel)) {
             throw new RuntimeException(
-                'Config inbound-email.tenant_model must be a valid model class-string (FQCN). Set INBOUND_EMAIL_TENANT_MODEL or config inbound-email.tenant_model.'
+                'Config inbound-email.tenant_model must be a model class-string (FQCN). Set INBOUND_EMAIL_TENANT_MODEL or config inbound-email.tenant_model.'
             );
+        }
+
+        if (! class_exists($tenantModel)) {
+            throw new RuntimeException(sprintf('Tenant model class [%s] does not exist.', $tenantModel));
         }
 
         return $this->belongsTo($tenantModel);
