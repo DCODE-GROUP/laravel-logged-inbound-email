@@ -1,88 +1,76 @@
 <?php
 
-namespace Dcodegroup\LaravelLoggedInboundEmail\Tests\Unit\Models;
-
 use Dcodegroup\LaravelLoggedInboundEmail\Enums\InboundEmailStatus;
 use Dcodegroup\LaravelLoggedInboundEmail\Models\InboundEmail;
 use Dcodegroup\LaravelLoggedInboundEmail\Models\InboundEmailAttachment;
-use Dcodegroup\LaravelLoggedInboundEmail\Tests\TestCase;
 
-class InboundEmailTest extends TestCase
-{
-    public function test_mark_processing_transitions_status(): void
-    {
-        $inboundEmail = InboundEmail::factory()->create(['status' => InboundEmailStatus::Received]);
+it('transitions status when marked processing', function (): void {
+    $inboundEmail = InboundEmail::factory()->create(['status' => InboundEmailStatus::Received]);
 
-        $inboundEmail->markProcessing();
+    $inboundEmail->markProcessing();
 
-        self::assertSame(InboundEmailStatus::Processing, $inboundEmail->fresh()->status);
-    }
+    expect($inboundEmail->fresh()->status)->toBe(InboundEmailStatus::Processing);
+});
 
-    public function test_mark_processed_transitions_status(): void
-    {
-        $inboundEmail = InboundEmail::factory()->create(['status' => InboundEmailStatus::Processing]);
+it('transitions status when marked processed', function (): void {
+    $inboundEmail = InboundEmail::factory()->create(['status' => InboundEmailStatus::Processing]);
 
-        $inboundEmail->markProcessed();
+    $inboundEmail->markProcessed();
 
-        self::assertSame(InboundEmailStatus::Processed, $inboundEmail->fresh()->status);
-    }
+    expect($inboundEmail->fresh()->status)->toBe(InboundEmailStatus::Processed);
+});
 
-    public function test_mark_failed_transitions_status_and_sets_error(): void
-    {
-        $inboundEmail = InboundEmail::factory()->create(['status' => InboundEmailStatus::Processing]);
+it('transitions status and sets error when marked failed', function (): void {
+    $inboundEmail = InboundEmail::factory()->create(['status' => InboundEmailStatus::Processing]);
 
-        $inboundEmail->markFailed('something went wrong');
+    $inboundEmail->markFailed('something went wrong');
 
-        $fresh = $inboundEmail->fresh();
+    $fresh = $inboundEmail->fresh();
 
-        self::assertSame(InboundEmailStatus::Failed, $fresh->status);
-        self::assertSame('something went wrong', $fresh->error);
-    }
+    expect($fresh->status)->toBe(InboundEmailStatus::Failed)
+        ->and($fresh->error)->toBe('something went wrong');
+});
 
-    public function test_mark_failed_without_error_clears_error_column(): void
-    {
-        $inboundEmail = InboundEmail::factory()->create(['status' => InboundEmailStatus::Processing]);
+it('clears the error column when marked failed without an error', function (): void {
+    $inboundEmail = InboundEmail::factory()->create(['status' => InboundEmailStatus::Processing]);
 
-        $inboundEmail->markFailed();
+    $inboundEmail->markFailed();
 
-        self::assertNull($inboundEmail->fresh()->error);
-    }
+    expect($inboundEmail->fresh()->error)->toBeNull();
+});
 
-    public function test_soft_deleting_inbound_email_cascades_to_attachments(): void
-    {
-        $inboundEmail = InboundEmail::factory()->create();
+it('cascades soft deletes to attachments', function (): void {
+    $inboundEmail = InboundEmail::factory()->create();
 
-        $attachment = $inboundEmail->attachments()->create([
-            'filename' => 'invoice.pdf',
-            'disk' => 'local',
-            'path' => 'inbound-email-attachments/1/invoice.pdf',
-            'content_type' => 'application/pdf',
-            'size' => 1234,
-        ]);
+    $attachment = $inboundEmail->attachments()->create([
+        'filename' => 'invoice.pdf',
+        'disk' => 'local',
+        'path' => 'inbound-email-attachments/1/invoice.pdf',
+        'content_type' => 'application/pdf',
+        'size' => 1234,
+    ]);
 
-        $inboundEmail->delete();
+    $inboundEmail->delete();
 
-        $this->assertSoftDeleted($inboundEmail);
-        $this->assertSoftDeleted($attachment);
+    $this->assertSoftDeleted($inboundEmail);
+    $this->assertSoftDeleted($attachment);
 
-        self::assertNull(InboundEmailAttachment::find($attachment->id));
-        self::assertNotNull(InboundEmailAttachment::withTrashed()->find($attachment->id)->deleted_at);
-    }
+    expect(InboundEmailAttachment::find($attachment->id))->toBeNull()
+        ->and(InboundEmailAttachment::withTrashed()->find($attachment->id)->deleted_at)->not->toBeNull();
+});
 
-    public function test_force_deleting_inbound_email_does_not_run_the_soft_delete_cascade_twice(): void
-    {
-        $inboundEmail = InboundEmail::factory()->create();
+it('does not run the soft delete cascade twice when force deleting', function (): void {
+    $inboundEmail = InboundEmail::factory()->create();
 
-        $inboundEmail->attachments()->create([
-            'filename' => 'invoice.pdf',
-            'disk' => 'local',
-            'path' => 'inbound-email-attachments/1/invoice.pdf',
-            'content_type' => 'application/pdf',
-            'size' => 1234,
-        ]);
+    $inboundEmail->attachments()->create([
+        'filename' => 'invoice.pdf',
+        'disk' => 'local',
+        'path' => 'inbound-email-attachments/1/invoice.pdf',
+        'content_type' => 'application/pdf',
+        'size' => 1234,
+    ]);
 
-        $inboundEmail->forceDelete();
+    $inboundEmail->forceDelete();
 
-        $this->assertDatabaseCount('inbound_emails', 0);
-    }
-}
+    $this->assertDatabaseCount('inbound_emails', 0);
+});
