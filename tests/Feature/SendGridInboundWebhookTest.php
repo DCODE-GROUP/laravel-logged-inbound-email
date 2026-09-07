@@ -56,7 +56,11 @@ class SendGridInboundWebhookTest extends TestCase
         ])->assertForbidden();
 
         Bus::assertNothingDispatched();
-        self::assertSame(0, InboundEmail::count());
+        self::assertSame(1, InboundEmail::count());
+
+        $inboundEmail = InboundEmail::sole();
+        self::assertSame(InboundEmailStatus::Failed, $inboundEmail->status);
+        self::assertSame('Verification failed', $inboundEmail->error);
     }
 
     public function test_accepts_when_verification_headers_match(): void

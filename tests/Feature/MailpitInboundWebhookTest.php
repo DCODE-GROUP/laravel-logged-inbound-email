@@ -28,7 +28,7 @@ class MailpitInboundWebhookTest extends TestCase
             ->assertForbidden();
 
         Bus::assertNothingDispatched();
-        self::assertSame(0, InboundEmail::count());
+        $this->assertVerificationFailedRowRecorded();
     }
 
     public function test_rejects_when_webhook_secret_does_not_match(): void
@@ -42,7 +42,16 @@ class MailpitInboundWebhookTest extends TestCase
         ])->assertForbidden();
 
         Bus::assertNothingDispatched();
-        self::assertSame(0, InboundEmail::count());
+        $this->assertVerificationFailedRowRecorded();
+    }
+
+    private function assertVerificationFailedRowRecorded(): void
+    {
+        self::assertSame(1, InboundEmail::count());
+
+        $inboundEmail = InboundEmail::sole();
+        self::assertSame(InboundEmailStatus::Failed, $inboundEmail->status);
+        self::assertSame('Verification failed', $inboundEmail->error);
     }
 
     public function test_fetches_message_from_api_and_dispatches_job(): void

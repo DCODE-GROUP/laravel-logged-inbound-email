@@ -49,7 +49,7 @@ class ResendInboundWebhookTest extends TestCase
             ->assertForbidden();
 
         Bus::assertNothingDispatched();
-        self::assertSame(0, InboundEmail::count());
+        $this->assertVerificationFailedRowRecorded();
     }
 
     public function test_rejects_invalid_signature(): void
@@ -63,7 +63,16 @@ class ResendInboundWebhookTest extends TestCase
             ->assertForbidden();
 
         Bus::assertNothingDispatched();
-        self::assertSame(0, InboundEmail::count());
+        $this->assertVerificationFailedRowRecorded();
+    }
+
+    private function assertVerificationFailedRowRecorded(): void
+    {
+        self::assertSame(1, InboundEmail::count());
+
+        $inboundEmail = InboundEmail::sole();
+        self::assertSame(InboundEmailStatus::Failed, $inboundEmail->status);
+        self::assertSame('Verification failed', $inboundEmail->error);
     }
 
     public function test_acknowledges_non_email_received_events_without_dispatching_job(): void
