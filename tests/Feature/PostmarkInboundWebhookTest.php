@@ -3,7 +3,7 @@
 namespace Dcodegroup\LaravelLoggedInboundEmail\Tests\Feature;
 
 use Dcodegroup\LaravelLoggedInboundEmail\Enums\InboundEmailStatus;
-use Dcodegroup\LaravelLoggedInboundEmail\Jobs\DefaultProcessInboundEmailJob;
+use Dcodegroup\LaravelLoggedInboundEmail\Jobs\ProcessInboundEmailJob;
 use Dcodegroup\LaravelLoggedInboundEmail\Models\InboundEmail;
 use Dcodegroup\LaravelLoggedInboundEmail\Tests\TestCase;
 use Illuminate\Support\Facades\Bus;
@@ -84,7 +84,7 @@ class PostmarkInboundWebhookTest extends TestCase
             'CONTENT_TYPE' => 'application/json',
         ], $signed['body'])->assertOk();
 
-        Bus::assertDispatched(DefaultProcessInboundEmailJob::class, function (DefaultProcessInboundEmailJob $job): bool {
+        Bus::assertDispatched(ProcessInboundEmailJob::class, function (ProcessInboundEmailJob $job): bool {
             $m = $job->message;
 
             return ($m['provider'] ?? null) === 'postmark'

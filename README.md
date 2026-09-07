@@ -75,7 +75,7 @@ Example: `POST https://your-app.test/webhooks/inbound/acme-corp/mailgun`
 | `INBOUND_EMAIL_ROUTE_PREFIX` | URL prefix for all inbound routes (default `webhooks/inbound`). |
 | `INBOUND_EMAIL_ORG_IN_ROUTE` | `true` = `{orgAlias}/{provider}` URLs; `false` = `{provider}` only. |
 | `INBOUND_EMAIL_ORG_ALIAS_PATTERN` | Regex (no delimiters) for `{orgAlias}` when org routing is on. |
-| `INBOUND_EMAIL_JOB` | FQCN of your queued job (implements `ProcessesInboundEmail`). Default: package `DefaultProcessInboundEmailJob` (debug log only). |
+| `INBOUND_EMAIL_JOB` | FQCN of your queued job (implements `ProcessesInboundEmail`). Default: package `ProcessInboundEmailJob` (debug log only). |
 | `INBOUND_EMAIL_QUEUE_CONNECTION` | Optional queue connection for the dispatch. |
 | `INBOUND_EMAIL_QUEUE` | Optional queue name for the dispatch. |
 

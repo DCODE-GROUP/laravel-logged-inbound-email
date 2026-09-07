@@ -6,7 +6,7 @@ use Dcodegroup\LaravelLoggedInboundEmail\Contracts\InboundProviderConfigResolver
 use Dcodegroup\LaravelLoggedInboundEmail\Contracts\InboundWebhookTenantPolicy;
 use Dcodegroup\LaravelLoggedInboundEmail\Contracts\ProcessesInboundEmail;
 use Dcodegroup\LaravelLoggedInboundEmail\InboundWebhookHandlerFactory;
-use Dcodegroup\LaravelLoggedInboundEmail\Jobs\DefaultProcessInboundEmailJob;
+use Dcodegroup\LaravelLoggedInboundEmail\Jobs\ProcessInboundEmailJob;
 use Dcodegroup\LaravelLoggedInboundEmail\Support\InboundEmailRecorder;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Http\Request;
@@ -82,7 +82,7 @@ class InboundWebhookController extends Controller
      */
     private function dispatchInboundEmailJob(array $payload, string $orgAlias): void
     {
-        $jobClass = config('inbound-email.job', DefaultProcessInboundEmailJob::class);
+        $jobClass = config('inbound-email.job', ProcessInboundEmailJob::class);
 
         if (! is_string($jobClass)) {
             throw new RuntimeException(

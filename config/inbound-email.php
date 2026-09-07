@@ -1,6 +1,6 @@
 <?php
 
-use Dcodegroup\LaravelLoggedInboundEmail\Jobs\DefaultProcessInboundEmailJob;
+use Dcodegroup\LaravelLoggedInboundEmail\Jobs\ProcessInboundEmailJob;
 
 return [
 
@@ -68,7 +68,7 @@ return [
     | Laravel's Dispatchable trait, and accept array $message (InboundMessage::toArray()).
     |
     */
-    'job' => env('INBOUND_EMAIL_JOB', DefaultProcessInboundEmailJob::class),
+    'job' => env('INBOUND_EMAIL_JOB', ProcessInboundEmailJob::class),
 
     /*
     |--------------------------------------------------------------------------

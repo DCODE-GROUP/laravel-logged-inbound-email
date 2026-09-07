@@ -14,7 +14,7 @@ use Illuminate\Support\Facades\Log;
  * Default no-op handler. Replace via config `inbound-email.job` or by rebinding
  * what `ProcessesInboundEmail` resolves to (must be a class-string of your job).
  */
-final class DefaultProcessInboundEmailJob implements ProcessesInboundEmail
+final class ProcessInboundEmailJob implements ProcessesInboundEmail
 {
     use Dispatchable;
     use InteractsWithQueue;

@@ -3,7 +3,7 @@
 namespace Dcodegroup\LaravelLoggedInboundEmail\Tests\Feature;
 
 use Dcodegroup\LaravelLoggedInboundEmail\Enums\InboundEmailStatus;
-use Dcodegroup\LaravelLoggedInboundEmail\Jobs\DefaultProcessInboundEmailJob;
+use Dcodegroup\LaravelLoggedInboundEmail\Jobs\ProcessInboundEmailJob;
 use Dcodegroup\LaravelLoggedInboundEmail\Models\InboundEmail;
 use Dcodegroup\LaravelLoggedInboundEmail\Tests\TestCase;
 use Illuminate\Support\Facades\Bus;
@@ -103,7 +103,7 @@ class SesInboundWebhookTest extends TestCase
         $envelope = $this->snsNotificationEnvelope($inner);
         $this->postJson('/webhooks/inbound/ses', $envelope)->assertOk();
 
-        Bus::assertDispatched(DefaultProcessInboundEmailJob::class, function (DefaultProcessInboundEmailJob $job): bool {
+        Bus::assertDispatched(ProcessInboundEmailJob::class, function (ProcessInboundEmailJob $job): bool {
             $m = $job->message;
 
             return ($m['provider'] ?? null) === 'ses'
@@ -149,7 +149,7 @@ class SesInboundWebhookTest extends TestCase
 
         $this->postJson('/webhooks/inbound/ses', $this->snsNotificationEnvelope($inner))->assertOk();
 
-        Bus::assertDispatched(DefaultProcessInboundEmailJob::class, function (DefaultProcessInboundEmailJob $job): bool {
+        Bus::assertDispatched(ProcessInboundEmailJob::class, function (ProcessInboundEmailJob $job): bool {
             $m = $job->message;
 
             return ($m['provider'] ?? null) === 'ses'
