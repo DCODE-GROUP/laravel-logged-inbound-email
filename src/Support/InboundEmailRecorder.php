@@ -2,6 +2,7 @@
 
 namespace Dcodegroup\LaravelLoggedInboundEmail\Support;
 
+use Dcodegroup\LaravelLoggedInboundEmail\Contracts\EmailBasedTenantResolver;
 use Dcodegroup\LaravelLoggedInboundEmail\Contracts\InboundWebhookHandler;
 use Dcodegroup\LaravelLoggedInboundEmail\Enums\InboundEmailStatus;
 use Dcodegroup\LaravelLoggedInboundEmail\Enums\Provider;
@@ -13,6 +14,7 @@ use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
+use RuntimeException;
 use Throwable;
 
 /**
@@ -40,8 +42,10 @@ class InboundEmailRecorder
      *
      * The given $organizationAlias should already be resolved by the caller
      * to null unless multi-tenant routing (`organization_in_route`) is
-     * enabled and the `{orgAlias}` route segment was present; this method
-     * simply stores whatever it is given.
+     * enabled and the `{orgAlias}` route segment was present. When null and
+     * email-based tenancy is enabled, the tenant identifier is instead parsed
+     * from the recipient address once the message has been parsed — the
+     * route segment always wins when both are present and disagree.
      *
      * @throws Throwable re-thrown after marking the row Failed
      */
@@ -79,9 +83,52 @@ class InboundEmailRecorder
             return null;
         }
 
-        $this->markReceived($inboundEmail, $message);
+        $this->markReceived($inboundEmail, $message, $this->resolveTenantAlias($organizationAlias, $message));
 
         return $message;
+    }
+
+    /**
+     * Route-derived alias wins when present; otherwise fall back to
+     * email-based tenancy (when enabled) parsed from the recipient address.
+     */
+    private function resolveTenantAlias(?string $organizationAlias, InboundMessage $message): ?string
+    {
+        if ($organizationAlias !== null) {
+            return $organizationAlias;
+        }
+
+        if (! (bool) config('inbound-email.email_based_tenancy_enabled', false)) {
+            return null;
+        }
+
+        return $this->emailBasedTenantResolver()->resolve($message->to);
+    }
+
+    /**
+     * Instantiates the class named by config('inbound-email.tenant_resolver'),
+     * defaulting to the package's own EmailAddressTenantResolver. Host apps
+     * override this config to provide their own email-based tenancy scheme.
+     */
+    private function emailBasedTenantResolver(): EmailBasedTenantResolver
+    {
+        $resolverClass = config('inbound-email.tenant_resolver', EmailAddressTenantResolver::class);
+
+        if (! is_string($resolverClass) || ! class_exists($resolverClass)) {
+            throw new RuntimeException(
+                'Config inbound-email.tenant_resolver must be a class-string (FQCN). Set INBOUND_EMAIL_TENANT_RESOLVER or config inbound-email.tenant_resolver.'
+            );
+        }
+
+        if (! in_array(EmailBasedTenantResolver::class, class_implements($resolverClass), true)) {
+            throw new RuntimeException(sprintf(
+                'Class [%s] must implement %s.',
+                $resolverClass,
+                EmailBasedTenantResolver::class
+            ));
+        }
+
+        return app($resolverClass);
     }
 
     private function createPending(Request $request, Provider $provider, ?string $organizationAlias): InboundEmail
@@ -94,7 +141,7 @@ class InboundEmailRecorder
         ]);
     }
 
-    private function markReceived(InboundEmail $inboundEmail, InboundMessage $message): void
+    private function markReceived(InboundEmail $inboundEmail, InboundMessage $message, ?string $organizationAlias): void
     {
         $inboundEmail->update([
             'provider' => $message->provider->value,
@@ -107,6 +154,7 @@ class InboundEmailRecorder
             'text_content' => $message->text,
             'html_content' => $message->html,
             'message_id' => $this->extractMessageId($message),
+            'organization_alias' => $organizationAlias,
             'received_at' => Carbon::now(),
             'status' => InboundEmailStatus::Received,
         ]);

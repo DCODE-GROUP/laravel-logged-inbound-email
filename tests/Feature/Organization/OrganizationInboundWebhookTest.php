@@ -34,3 +34,17 @@ it('returns 404 for an invalid org alias segment', function (): void {
     // Pattern requires first character alphanumeric (cannot start with hyphen).
     $this->post('/webhooks/inbound/-bad/mailgun', [])->assertNotFound();
 });
+
+it('lets the route alias win over a disagreeing plus-addressed recipient', function (): void {
+    config(['inbound-email.email_based_tenancy_enabled' => true]);
+
+    $ts = (string) time();
+    $token = 'abc';
+    $sig = $this->mailgunSignature($ts, $token, 'test-mailgun-key');
+    $payload = $this->validMailgunPayload($ts, $token, $sig);
+    $payload['recipient'] = 'other-tenant+support@example.com';
+
+    $this->post('/webhooks/inbound/acme-corp/mailgun', $payload)->assertOk();
+
+    expect(InboundEmail::sole()->organization_alias)->toBe('acme-corp');
+});
