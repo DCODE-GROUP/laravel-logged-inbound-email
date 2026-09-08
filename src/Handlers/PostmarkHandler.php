@@ -3,6 +3,7 @@
 namespace Dcodegroup\LaravelLoggedInboundEmail\Handlers;
 
 use Dcodegroup\LaravelLoggedInboundEmail\Contracts\InboundWebhookHandler;
+use Dcodegroup\LaravelLoggedInboundEmail\Enums\Provider;
 use Dcodegroup\LaravelLoggedInboundEmail\InboundMessage;
 use Dcodegroup\LaravelLoggedInboundEmail\Support\AddressParser;
 use Dcodegroup\LaravelLoggedInboundEmail\Support\ReadsInboundProviderConfig;
@@ -15,7 +16,7 @@ class PostmarkHandler implements InboundWebhookHandler
 
     public function verify(Request $request): void
     {
-        $secret = $this->inboundProviderSettings($request, 'postmark')['webhook_secret'] ?? null;
+        $secret = $this->inboundProviderSettings($request, Provider::Postmark)['webhook_secret'] ?? null;
         if (! is_string($secret) || $secret === '') {
             throw new AccessDeniedHttpException('Postmark webhook secret is not configured.');
         }
@@ -50,7 +51,7 @@ class PostmarkHandler implements InboundWebhookHandler
         $bcc = $bccFull !== [] ? $bccFull : AddressParser::parseList($payload['Bcc'] ?? null);
 
         return new InboundMessage(
-            provider: 'postmark',
+            provider: Provider::Postmark,
             from: $from,
             to: $to,
             cc: $cc,

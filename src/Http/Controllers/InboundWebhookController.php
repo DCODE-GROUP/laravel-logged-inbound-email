@@ -5,6 +5,7 @@ namespace Dcodegroup\LaravelLoggedInboundEmail\Http\Controllers;
 use Dcodegroup\LaravelLoggedInboundEmail\Contracts\InboundProviderConfigResolver;
 use Dcodegroup\LaravelLoggedInboundEmail\Contracts\InboundWebhookTenantPolicy;
 use Dcodegroup\LaravelLoggedInboundEmail\Contracts\ProcessesInboundEmail;
+use Dcodegroup\LaravelLoggedInboundEmail\Enums\Provider;
 use Dcodegroup\LaravelLoggedInboundEmail\InboundWebhookHandlerFactory;
 use Dcodegroup\LaravelLoggedInboundEmail\Jobs\ProcessInboundEmailJob;
 use Dcodegroup\LaravelLoggedInboundEmail\Support\InboundEmailRecorder;
@@ -36,22 +37,23 @@ class InboundWebhookController extends Controller
 
     private function handleInbound(Request $request, string $provider, string $orgAlias): Response
     {
-        if (! in_array($provider, InboundWebhookHandlerFactory::ALLOWED_PROVIDERS, true)) {
+        $providerEnum = Provider::tryFrom($provider);
+        if ($providerEnum === null) {
             throw new NotFoundHttpException;
         }
 
         $orgForPolicy = $orgAlias !== '' ? $orgAlias : null;
-        $this->tenantPolicy->assertInboundAllowed($orgForPolicy, $provider);
+        $this->tenantPolicy->assertInboundAllowed($orgForPolicy, $providerEnum);
 
-        $merged = $this->mergedProviderConfig($orgForPolicy, $provider);
+        $merged = $this->mergedProviderConfig($orgForPolicy, $providerEnum);
         $request->attributes->set('inbound_email.merged_provider_config', $merged);
 
-        $handler = $this->factory->make($provider);
+        $handler = $this->factory->make($providerEnum);
 
         $organizationInRoute = (bool) config('inbound-email.organization_in_route', false);
         $organizationAlias = $organizationInRoute ? $orgForPolicy : null;
 
-        $message = $this->recorder->record($request, $provider, $handler, $organizationAlias);
+        $message = $this->recorder->record($request, $providerEnum, $handler, $organizationAlias);
 
         if ($message !== null) {
             $this->dispatchInboundEmailJob($message->toArray(), $orgAlias);
@@ -63,9 +65,9 @@ class InboundWebhookController extends Controller
     /**
      * @return array<string, mixed>
      */
-    private function mergedProviderConfig(?string $organizationAlias, string $provider): array
+    private function mergedProviderConfig(?string $organizationAlias, Provider $provider): array
     {
-        $base = config("inbound-email.providers.{$provider}");
+        $base = config($provider->configKey());
         $merged = is_array($base) ? $base : [];
 
         foreach ($this->providerConfigResolver->resolve($organizationAlias, $provider) as $key => $value) {

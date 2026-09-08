@@ -3,6 +3,7 @@
 namespace Dcodegroup\LaravelLoggedInboundEmail\Handlers;
 
 use Dcodegroup\LaravelLoggedInboundEmail\Contracts\InboundWebhookHandler;
+use Dcodegroup\LaravelLoggedInboundEmail\Enums\Provider;
 use Dcodegroup\LaravelLoggedInboundEmail\InboundMessage;
 use Dcodegroup\LaravelLoggedInboundEmail\Support\AddressParser;
 use Dcodegroup\LaravelLoggedInboundEmail\Support\ReadsInboundProviderConfig;
@@ -15,7 +16,7 @@ class SendGridHandler implements InboundWebhookHandler
 
     public function verify(Request $request): void
     {
-        $key = $this->inboundProviderSettings($request, 'sendgrid')['verification_key'] ?? null;
+        $key = $this->inboundProviderSettings($request, Provider::SendGrid)['verification_key'] ?? null;
         if (! is_string($key) || $key === '') {
             return;
         }
@@ -43,7 +44,7 @@ class SendGridHandler implements InboundWebhookHandler
     private function fromFormFields(Request $request): InboundMessage
     {
         return new InboundMessage(
-            provider: 'sendgrid',
+            provider: Provider::SendGrid,
             from: AddressParser::parseOne($request->input('from')),
             to: AddressParser::parseList($request->input('to')),
             subject: $this->stringInput($request, 'subject'),
