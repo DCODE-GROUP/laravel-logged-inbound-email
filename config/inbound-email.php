@@ -39,6 +39,22 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Multi-tenancy
+    |--------------------------------------------------------------------------
+    |
+    | When true, the `tenant_id` column (and its index) is added to the
+    | inbound_emails table at migration time, and InboundEmail::tenant()
+    | becomes available. Evaluated when the host app runs `php artisan
+    | migrate`, after publishing and configuring the package — not at
+    | vendor:publish time. Flipping this after the initial migration does
+    | not retroactively add or drop the column; add your own follow-up
+    | migration if you enable this later.
+    |
+    */
+    'multi_tenant_enabled' => env('INBOUND_EMAIL_MULTI_TENANT_ENABLED', false),
+
+    /*
+    |--------------------------------------------------------------------------
     | Tenant model
     |--------------------------------------------------------------------------
     |

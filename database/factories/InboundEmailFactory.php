@@ -32,7 +32,6 @@ class InboundEmailFactory extends Factory
             'message_id' => $this->faker->uuid(),
             'received_at' => now(),
             'organization_alias' => null,
-            'tenant_id' => null,
             'status' => InboundEmailStatus::Received,
             'error' => null,
         ];

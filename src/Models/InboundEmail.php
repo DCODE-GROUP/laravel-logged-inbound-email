@@ -4,12 +4,16 @@ namespace Dcodegroup\LaravelLoggedInboundEmail\Models;
 
 use Dcodegroup\LaravelLoggedInboundEmail\Database\Factories\InboundEmailFactory;
 use Dcodegroup\LaravelLoggedInboundEmail\Enums\InboundEmailStatus;
+use Dcodegroup\LaravelLoggedInboundEmail\Observers\InboundEmailObserver;
+use Illuminate\Database\Eloquent\Attributes\ObservedBy;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\MorphTo;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Carbon;
+use RuntimeException;
 
 /**
  * Durable record of a received inbound email: both the raw webhook receipt
@@ -32,13 +36,14 @@ use Illuminate\Support\Carbon;
  * @property InboundEmailStatus $status
  * @property string|null $error
  * @property string|null $organization_alias
- * @property int|null $tenant_id
+ * @property int|null $tenant_id Only present when multi_tenant_enabled is true.
  * @property int|null $contactable_id
  * @property string|null $contactable_type
  * @property int|null $processable_id
  * @property string|null $processable_type
  * @property Carbon|null $deleted_at
  */
+#[ObservedBy(InboundEmailObserver::class)]
 class InboundEmail extends Model
 {
     /** @use HasFactory<InboundEmailFactory> */
@@ -53,17 +58,6 @@ class InboundEmail extends Model
     protected static function newFactory(): InboundEmailFactory
     {
         return InboundEmailFactory::new();
-    }
-
-    protected static function booted(): void
-    {
-        static::deleting(function (self $inboundEmail): void {
-            if ($inboundEmail->isForceDeleting()) {
-                return;
-            }
-
-            $inboundEmail->attachments->each->delete();
-        });
     }
 
     /**
@@ -91,6 +85,35 @@ class InboundEmail extends Model
     }
 
     /**
+     * The consuming app's tenant record, per config('inbound-email.tenant_model').
+     * Returns null when config('inbound-email.multi_tenant_enabled') is false —
+     * the tenant_id column itself is opt-in at migration time, so there is no
+     * relation to build. Never populated by the package itself.
+     *
+     * @return BelongsTo<Model, $this>|null
+     */
+    public function tenant(): ?BelongsTo
+    {
+        if (! (bool) config('inbound-email.multi_tenant_enabled')) {
+            return null;
+        }
+
+        $tenantModel = config('inbound-email.tenant_model');
+
+        if (! is_string($tenantModel)) {
+            throw new RuntimeException(
+                'Config inbound-email.tenant_model must be a model class-string (FQCN). Set INBOUND_EMAIL_TENANT_MODEL or config inbound-email.tenant_model.'
+            );
+        }
+
+        if (! class_exists($tenantModel)) {
+            throw new RuntimeException(sprintf('Tenant model class [%s] does not exist.', $tenantModel));
+        }
+
+        return $this->belongsTo($tenantModel);
+    }
+
+    /**
      * Whichever of the consuming app's own models represents "who this came
      * from" (a Contact, a Customer, etc.). Never populated by the package.
      *
@@ -110,35 +133,5 @@ class InboundEmail extends Model
     public function processable(): MorphTo
     {
         return $this->morphTo();
-    }
-
-    /**
-     * For the consuming app's own job to call once it starts acting on this
-     * email. Never called by the package itself.
-     */
-    public function markProcessing(): bool
-    {
-        return $this->update(['status' => InboundEmailStatus::Processing]);
-    }
-
-    /**
-     * For the consuming app's own job to call once it has finished acting on
-     * this email successfully. Never called by the package itself.
-     */
-    public function markProcessed(): bool
-    {
-        return $this->update(['status' => InboundEmailStatus::Processed]);
-    }
-
-    /**
-     * For the consuming app's own job to call when its own processing fails.
-     * Never called by the package itself.
-     */
-    public function markFailed(?string $error = null): bool
-    {
-        return $this->update([
-            'status' => InboundEmailStatus::Failed,
-            'error' => $error,
-        ]);
     }
 }
