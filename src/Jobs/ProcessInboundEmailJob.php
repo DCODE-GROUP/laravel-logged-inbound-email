@@ -34,7 +34,7 @@ final class ProcessInboundEmailJob implements ProcessesInboundEmail
         $inbound = InboundMessage::fromArray($this->message);
 
         Log::debug('Inbound email received (set config inbound-email.job or bind ProcessesInboundEmail to your job class-string).', [
-            'provider' => $inbound->provider,
+            'provider' => $inbound->provider->value,
             'subject' => $inbound->subject,
             'org_alias' => $this->orgAlias !== '' ? $this->orgAlias : null,
         ]);

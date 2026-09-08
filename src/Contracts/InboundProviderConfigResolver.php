@@ -2,6 +2,8 @@
 
 namespace Dcodegroup\LaravelLoggedInboundEmail\Contracts;
 
+use Dcodegroup\LaravelLoggedInboundEmail\Enums\Provider;
+
 interface InboundProviderConfigResolver
 {
     /**
@@ -10,5 +12,5 @@ interface InboundProviderConfigResolver
      *
      * @return array<string, mixed>
      */
-    public function resolve(?string $organizationAlias, string $provider): array;
+    public function resolve(?string $organizationAlias, Provider $provider): array;
 }

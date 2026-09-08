@@ -4,6 +4,7 @@ namespace Dcodegroup\LaravelLoggedInboundEmail\Support;
 
 use Dcodegroup\LaravelLoggedInboundEmail\Contracts\InboundWebhookHandler;
 use Dcodegroup\LaravelLoggedInboundEmail\Enums\InboundEmailStatus;
+use Dcodegroup\LaravelLoggedInboundEmail\Enums\Provider;
 use Dcodegroup\LaravelLoggedInboundEmail\InboundMessage;
 use Dcodegroup\LaravelLoggedInboundEmail\Models\InboundEmail;
 use Dcodegroup\LaravelLoggedInboundEmail\Models\InboundEmailAttachment;
@@ -44,7 +45,7 @@ class InboundEmailRecorder
      *
      * @throws Throwable re-thrown after marking the row Failed
      */
-    public function record(Request $request, string $provider, InboundWebhookHandler $handler, ?string $organizationAlias = null): ?InboundMessage
+    public function record(Request $request, Provider $provider, InboundWebhookHandler $handler, ?string $organizationAlias = null): ?InboundMessage
     {
         $inboundEmail = $this->createPending($request, $provider, $organizationAlias);
 
@@ -83,11 +84,11 @@ class InboundEmailRecorder
         return $message;
     }
 
-    private function createPending(Request $request, string $provider, ?string $organizationAlias): InboundEmail
+    private function createPending(Request $request, Provider $provider, ?string $organizationAlias): InboundEmail
     {
         return InboundEmail::create([
             'payload' => $this->rawPayload($request),
-            'provider' => $provider,
+            'provider' => $provider->value,
             'organization_alias' => $organizationAlias,
             'status' => InboundEmailStatus::Pending,
         ]);
@@ -96,7 +97,7 @@ class InboundEmailRecorder
     private function markReceived(InboundEmail $inboundEmail, InboundMessage $message): void
     {
         $inboundEmail->update([
-            'provider' => $message->provider,
+            'provider' => $message->provider->value,
             'from' => $message->from,
             'to' => $message->to,
             'cc' => $message->cc,
