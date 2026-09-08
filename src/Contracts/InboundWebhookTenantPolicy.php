@@ -2,6 +2,7 @@
 
 namespace Dcodegroup\LaravelLoggedInboundEmail\Contracts;
 
+use Dcodegroup\LaravelLoggedInboundEmail\Enums\Provider;
 use Symfony\Component\HttpKernel\Exception\HttpException;
 
 interface InboundWebhookTenantPolicy
@@ -11,5 +12,5 @@ interface InboundWebhookTenantPolicy
      *
      * @throws HttpException
      */
-    public function assertInboundAllowed(?string $organizationAlias, string $provider): void;
+    public function assertInboundAllowed(?string $organizationAlias, Provider $provider): void;
 }

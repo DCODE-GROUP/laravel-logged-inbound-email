@@ -7,9 +7,9 @@ namespace Dcodegroup\LaravelLoggedInboundEmail\Enums;
  *
  * Pending, Receiving, Received, and Failed are set exclusively by the
  * package itself (see InboundEmailRecorder). Processing and Processed are
- * set exclusively by the consuming app's own job, via markProcessing()/
- * markProcessed() (introduced in a later ticket) — the package never sets
- * them.
+ * set exclusively by the consuming app's own job, via a plain attribute
+ * assignment (e.g. `$inboundEmail->update(['status' => self::Processed])`)
+ * — the package never sets them.
  */
 enum InboundEmailStatus: string
 {

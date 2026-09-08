@@ -3,6 +3,7 @@
 namespace Dcodegroup\LaravelLoggedInboundEmail\Handlers;
 
 use Dcodegroup\LaravelLoggedInboundEmail\Contracts\InboundWebhookHandler;
+use Dcodegroup\LaravelLoggedInboundEmail\Enums\Provider;
 use Dcodegroup\LaravelLoggedInboundEmail\InboundMessage;
 use Dcodegroup\LaravelLoggedInboundEmail\Support\RawMimeParser;
 use Dcodegroup\LaravelLoggedInboundEmail\Support\ReadsInboundProviderConfig;
@@ -26,7 +27,7 @@ class SesSnsHandler implements InboundWebhookHandler
     {
         $payload = $this->snsPayload($request);
 
-        $settings = $this->inboundProviderSettings($request, 'ses');
+        $settings = $this->inboundProviderSettings($request, Provider::Ses);
         $allowUnsigned = $settings['allow_sns_message_without_signature'] ?? false;
         $allowUnsigned = filter_var($allowUnsigned, FILTER_VALIDATE_BOOLEAN);
 
@@ -157,7 +158,7 @@ class SesSnsHandler implements InboundWebhookHandler
                 continue;
             }
 
-            $diskName = $this->inboundProviderSettings($request, 'ses')['s3_disk'] ?? null;
+            $diskName = $this->inboundProviderSettings($request, Provider::Ses)['s3_disk'] ?? null;
             if (! is_string($diskName) || $diskName === '') {
                 throw new BadRequestHttpException(
                     'SES S3 action detected but inbound-email.providers.ses.s3_disk is not configured.'
@@ -184,7 +185,7 @@ class SesSnsHandler implements InboundWebhookHandler
         $commonHeaders = is_array($mail['commonHeaders'] ?? null) ? $mail['commonHeaders'] : [];
 
         return new InboundMessage(
-            provider: 'ses',
+            provider: Provider::Ses,
             from: $parsed->from,
             to: $parsed->to,
             cc: $parsed->cc,

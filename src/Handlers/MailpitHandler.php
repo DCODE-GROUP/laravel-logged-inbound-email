@@ -3,6 +3,7 @@
 namespace Dcodegroup\LaravelLoggedInboundEmail\Handlers;
 
 use Dcodegroup\LaravelLoggedInboundEmail\Contracts\InboundWebhookHandler;
+use Dcodegroup\LaravelLoggedInboundEmail\Enums\Provider;
 use Dcodegroup\LaravelLoggedInboundEmail\InboundMessage;
 use Dcodegroup\LaravelLoggedInboundEmail\Support\ReadsInboundProviderConfig;
 use Illuminate\Http\Client\RequestException;
@@ -17,7 +18,7 @@ class MailpitHandler implements InboundWebhookHandler
 
     public function verify(Request $request): void
     {
-        $secret = $this->inboundProviderSettings($request, 'mailpit')['webhook_secret'] ?? null;
+        $secret = $this->inboundProviderSettings($request, Provider::Mailpit)['webhook_secret'] ?? null;
         if (! is_string($secret) || $secret === '') {
             return;
         }
@@ -60,7 +61,7 @@ class MailpitHandler implements InboundWebhookHandler
      */
     private function fetchMessageFromApi(string $id, Request $request): array
     {
-        $settings = $this->inboundProviderSettings($request, 'mailpit');
+        $settings = $this->inboundProviderSettings($request, Provider::Mailpit);
         $base = rtrim((string) ($settings['base_url'] ?? 'http://127.0.0.1:8025'), '/');
         $token = $settings['api_token'] ?? null;
 
@@ -94,7 +95,7 @@ class MailpitHandler implements InboundWebhookHandler
     private function buildMessage(array $data, string $id): InboundMessage
     {
         return new InboundMessage(
-            provider: 'mailpit',
+            provider: Provider::Mailpit,
             from: $this->parseContact($data['From'] ?? null),
             to: $this->contactList($data['To'] ?? null),
             cc: $this->contactList($data['Cc'] ?? null),

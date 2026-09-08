@@ -3,6 +3,7 @@
 namespace Dcodegroup\LaravelLoggedInboundEmail\Handlers;
 
 use Dcodegroup\LaravelLoggedInboundEmail\Contracts\InboundWebhookHandler;
+use Dcodegroup\LaravelLoggedInboundEmail\Enums\Provider;
 use Dcodegroup\LaravelLoggedInboundEmail\InboundMessage;
 use Dcodegroup\LaravelLoggedInboundEmail\Support\AddressParser;
 use Dcodegroup\LaravelLoggedInboundEmail\Support\ReadsInboundProviderConfig;
@@ -20,7 +21,7 @@ class ResendHandler implements InboundWebhookHandler
 
     public function verify(Request $request): void
     {
-        $secret = $this->inboundProviderSettings($request, 'resend')['webhook_secret'] ?? null;
+        $secret = $this->inboundProviderSettings($request, Provider::Resend)['webhook_secret'] ?? null;
         if (! is_string($secret) || $secret === '') {
             throw new AccessDeniedHttpException('Resend webhook secret is not configured.');
         }
@@ -76,7 +77,7 @@ class ResendHandler implements InboundWebhookHandler
      */
     private function fetchEmailFromApi(string $emailId, Request $request): array
     {
-        $settings = $this->inboundProviderSettings($request, 'resend');
+        $settings = $this->inboundProviderSettings($request, Provider::Resend);
         $apiKey = $settings['api_key'] ?? null;
         if (! is_string($apiKey) || $apiKey === '') {
             throw new BadRequestHttpException('Resend API key is not configured.');
@@ -118,7 +119,7 @@ class ResendHandler implements InboundWebhookHandler
         $replyTo = $replyToList[0] ?? null;
 
         return new InboundMessage(
-            provider: 'resend',
+            provider: Provider::Resend,
             from: AddressParser::parseOne($emailData['from'] ?? null),
             to: $this->addressListFromMixed($emailData['to'] ?? null),
             cc: $this->addressListFromMixed($emailData['cc'] ?? null),
@@ -204,7 +205,7 @@ class ResendHandler implements InboundWebhookHandler
 
     private function fetchAttachmentContent(string $emailId, string $attachmentId, Request $request): string
     {
-        $settings = $this->inboundProviderSettings($request, 'resend');
+        $settings = $this->inboundProviderSettings($request, Provider::Resend);
         $apiKey = $settings['api_key'] ?? null;
         if (! is_string($apiKey) || $apiKey === '') {
             return '';
