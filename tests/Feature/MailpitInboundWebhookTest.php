@@ -1,123 +1,101 @@
 <?php
 
-namespace Dcodegroup\LaravelLoggedInboundEmail\Tests\Feature;
-
 use Dcodegroup\LaravelLoggedInboundEmail\Enums\InboundEmailStatus;
 use Dcodegroup\LaravelLoggedInboundEmail\Jobs\ProcessInboundEmailJob;
 use Dcodegroup\LaravelLoggedInboundEmail\Models\InboundEmail;
-use Dcodegroup\LaravelLoggedInboundEmail\Tests\TestCase;
 use Illuminate\Support\Facades\Bus;
 use Illuminate\Support\Facades\Http;
 
-class MailpitInboundWebhookTest extends TestCase
-{
-    protected function setUp(): void
-    {
-        parent::setUp();
+beforeEach(function (): void {
+    Http::preventStrayRequests();
+});
 
-        Http::preventStrayRequests();
-    }
+it('rejects when webhook secret configured and header missing', function (): void {
+    config(['inbound-email.providers.mailpit.webhook_secret' => 'pit-secret']);
 
-    public function test_rejects_when_webhook_secret_configured_and_header_missing(): void
-    {
-        config(['inbound-email.providers.mailpit.webhook_secret' => 'pit-secret']);
+    Bus::fake();
 
-        Bus::fake();
+    $this->postJson('/webhooks/inbound/mailpit', ['ID' => 'abc-1'])
+        ->assertForbidden();
 
-        $this->postJson('/webhooks/inbound/mailpit', ['ID' => 'abc-1'])
-            ->assertForbidden();
+    Bus::assertNothingDispatched();
+    $this->assertVerificationFailedRowRecorded();
+});
 
-        Bus::assertNothingDispatched();
-        $this->assertVerificationFailedRowRecorded();
-    }
+it('rejects when webhook secret does not match', function (): void {
+    config(['inbound-email.providers.mailpit.webhook_secret' => 'pit-secret']);
 
-    public function test_rejects_when_webhook_secret_does_not_match(): void
-    {
-        config(['inbound-email.providers.mailpit.webhook_secret' => 'pit-secret']);
+    Bus::fake();
 
-        Bus::fake();
+    $this->postJson('/webhooks/inbound/mailpit', ['ID' => 'abc-1'], [
+        'HTTP_X_WEBHOOK_SECRET' => 'wrong',
+    ])->assertForbidden();
 
-        $this->postJson('/webhooks/inbound/mailpit', ['ID' => 'abc-1'], [
-            'HTTP_X_WEBHOOK_SECRET' => 'wrong',
-        ])->assertForbidden();
+    Bus::assertNothingDispatched();
+    $this->assertVerificationFailedRowRecorded();
+});
 
-        Bus::assertNothingDispatched();
-        $this->assertVerificationFailedRowRecorded();
-    }
+it('fetches message from api and dispatches job', function (): void {
+    config(['inbound-email.providers.mailpit.webhook_secret' => '']);
 
-    private function assertVerificationFailedRowRecorded(): void
-    {
-        self::assertSame(1, InboundEmail::count());
+    Bus::fake();
 
-        $inboundEmail = InboundEmail::sole();
-        self::assertSame(InboundEmailStatus::Failed, $inboundEmail->status);
-        self::assertSame('Verification failed', $inboundEmail->error);
-    }
+    Http::fake([
+        '127.0.0.1:8825/api/v1/message/mp-1' => Http::response([
+            'From' => ['Email' => 'from@local.test', 'Name' => 'From'],
+            'To' => [['Email' => 'to@local.test', 'Name' => 'To']],
+            'Cc' => [],
+            'Bcc' => [],
+            'Subject' => 'Mailpit subject',
+            'Text' => 'Plain text',
+            'HTML' => '<p>HTML</p>',
+            'Attachments' => [],
+            'Headers' => [],
+        ], 200),
+    ]);
 
-    public function test_fetches_message_from_api_and_dispatches_job(): void
-    {
-        config(['inbound-email.providers.mailpit.webhook_secret' => '']);
+    $this->postJson('/webhooks/inbound/mailpit', ['ID' => 'mp-1'])->assertOk();
 
-        Bus::fake();
+    Bus::assertDispatched(ProcessInboundEmailJob::class, function (ProcessInboundEmailJob $job): bool {
+        $m = $job->message;
 
-        Http::fake([
-            '127.0.0.1:8825/api/v1/message/mp-1' => Http::response([
-                'From' => ['Email' => 'from@local.test', 'Name' => 'From'],
-                'To' => [['Email' => 'to@local.test', 'Name' => 'To']],
-                'Cc' => [],
-                'Bcc' => [],
-                'Subject' => 'Mailpit subject',
-                'Text' => 'Plain text',
-                'HTML' => '<p>HTML</p>',
-                'Attachments' => [],
-                'Headers' => [],
-            ], 200),
-        ]);
+        return ($m['provider'] ?? null) === 'mailpit'
+            && ($m['subject'] ?? null) === 'Mailpit subject'
+            && ($m['text'] ?? null) === 'Plain text'
+            && ($m['metadata']['mailpit_id'] ?? null) === 'mp-1';
+    });
 
-        $this->postJson('/webhooks/inbound/mailpit', ['ID' => 'mp-1'])->assertOk();
+    expect(InboundEmail::count())->toBe(1);
 
-        Bus::assertDispatched(ProcessInboundEmailJob::class, function (ProcessInboundEmailJob $job): bool {
-            $m = $job->message;
+    $inboundEmail = InboundEmail::sole();
+    expect($inboundEmail->status)->toBe(InboundEmailStatus::Received)
+        ->and($inboundEmail->payload)->toBe(json_encode(['ID' => 'mp-1'], JSON_THROW_ON_ERROR))
+        ->and($inboundEmail->provider)->toBe('mailpit')
+        ->and($inboundEmail->subject)->toBe('Mailpit subject')
+        ->and($inboundEmail->text_content)->toBe('Plain text')
+        ->and($inboundEmail->html_content)->toBe('<p>HTML</p>')
+        ->and($inboundEmail->from)->toBe(['email' => 'from@local.test', 'name' => 'From'])
+        ->and($inboundEmail->to)->toBe([['email' => 'to@local.test', 'name' => 'To']]);
+});
 
-            return ($m['provider'] ?? null) === 'mailpit'
-                && ($m['subject'] ?? null) === 'Mailpit subject'
-                && ($m['text'] ?? null) === 'Plain text'
-                && ($m['metadata']['mailpit_id'] ?? null) === 'mp-1';
-        });
+it('accepts alternate id casing in webhook payload', function (): void {
+    config(['inbound-email.providers.mailpit.webhook_secret' => '']);
 
-        self::assertSame(1, InboundEmail::count());
+    Bus::fake();
 
-        $inboundEmail = InboundEmail::sole();
-        self::assertSame(InboundEmailStatus::Received, $inboundEmail->status);
-        self::assertSame(json_encode(['ID' => 'mp-1'], JSON_THROW_ON_ERROR), $inboundEmail->payload);
-        self::assertSame('mailpit', $inboundEmail->provider);
-        self::assertSame('Mailpit subject', $inboundEmail->subject);
-        self::assertSame('Plain text', $inboundEmail->text_content);
-        self::assertSame('<p>HTML</p>', $inboundEmail->html_content);
-        self::assertSame(['email' => 'from@local.test', 'name' => 'From'], $inboundEmail->from);
-        self::assertSame([['email' => 'to@local.test', 'name' => 'To']], $inboundEmail->to);
-    }
+    Http::fake([
+        '127.0.0.1:8825/api/v1/message/mp-2' => Http::response([
+            'From' => ['Email' => 'a@b.com'],
+            'To' => [['Email' => 'c@d.com']],
+            'Subject' => 'Alt',
+            'Text' => 'T',
+            'HTML' => '',
+            'Attachments' => [],
+            'Headers' => [],
+        ], 200),
+    ]);
 
-    public function test_accepts_alternate_id_casing_in_webhook_payload(): void
-    {
-        config(['inbound-email.providers.mailpit.webhook_secret' => '']);
+    $this->postJson('/webhooks/inbound/mailpit', ['id' => 'mp-2'])->assertOk();
 
-        Bus::fake();
-
-        Http::fake([
-            '127.0.0.1:8825/api/v1/message/mp-2' => Http::response([
-                'From' => ['Email' => 'a@b.com'],
-                'To' => [['Email' => 'c@d.com']],
-                'Subject' => 'Alt',
-                'Text' => 'T',
-                'HTML' => '',
-                'Attachments' => [],
-                'Headers' => [],
-            ], 200),
-        ]);
-
-        $this->postJson('/webhooks/inbound/mailpit', ['id' => 'mp-2'])->assertOk();
-
-        Bus::assertDispatched(ProcessInboundEmailJob::class);
-    }
-}
+    Bus::assertDispatched(ProcessInboundEmailJob::class);
+});

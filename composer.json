@@ -31,12 +31,12 @@
         "symfony/mime": "^6.4|^7.0|^8.0"
     },
     "require-dev": {
-        "laravel/pint": "^1.14",
         "larastan/larastan": "^3.0",
+        "laravel/pint": "^1.14",
         "orchestra/testbench": "^9.0|^10.0|^11.0",
+        "pestphp/pest": "^4.7|^5.1",
         "phpstan/phpstan": "^1.11|^2.0",
-        "phpstan/phpstan-strict-rules": "^1.5|^2.0",
-        "phpunit/phpunit": "^10.5|^11.5"
+        "phpstan/phpstan-strict-rules": "^1.5|^2.0"
     },
     "autoload": {
         "psr-4": {
@@ -65,7 +65,7 @@
             "@prepare",
             "@php ./vendor/bin/testbench package:discover --ansi"
         ],
-        "test": "phpunit",
+        "test": "pest",
         "analyse": "phpstan analyse",
         "lint": "pint --test",
         "format:check": "@lint",
@@ -96,6 +96,9 @@
                     "PKSA-mdq4-51ck-6kdq"
                 ]
             }
+        },
+        "allow-plugins": {
+            "pestphp/pest-plugin": true
         }
     },
     "minimum-stability": "stable",
