@@ -2,7 +2,9 @@
 
 namespace Dcodegroup\LaravelLoggedInboundEmail\Tests;
 
+use Dcodegroup\LaravelLoggedInboundEmail\Enums\InboundEmailStatus;
 use Dcodegroup\LaravelLoggedInboundEmail\InboundEmailServiceProvider;
+use Dcodegroup\LaravelLoggedInboundEmail\Models\InboundEmail;
 use Orchestra\Testbench\Concerns\WithWorkbench;
 use Orchestra\Testbench\TestCase as Orchestra;
 use Svix\Webhook;
@@ -36,11 +38,6 @@ abstract class TestCase extends Orchestra
     protected function mailgunSignature(string $timestamp, string $token, string $signingKey): string
     {
         return hash_hmac('sha256', $timestamp.$token, $signingKey);
-    }
-
-    protected function postmarkSignature(string $body, string $secret): string
-    {
-        return base64_encode(hash_hmac('sha256', $body, $secret, true));
     }
 
     /**
@@ -84,5 +81,14 @@ abstract class TestCase extends Orchestra
                 'CONTENT_TYPE' => 'application/json',
             ],
         ];
+    }
+
+    protected function assertVerificationFailedRowRecorded(): void
+    {
+        self::assertSame(1, InboundEmail::count());
+
+        $inboundEmail = InboundEmail::sole();
+        self::assertSame(InboundEmailStatus::Failed, $inboundEmail->status);
+        self::assertSame('Verification failed', $inboundEmail->error);
     }
 }

@@ -1,106 +1,88 @@
 <?php
 
-namespace Dcodegroup\LaravelLoggedInboundEmail\Tests\Feature;
-
 use Dcodegroup\LaravelLoggedInboundEmail\Enums\InboundEmailStatus;
 use Dcodegroup\LaravelLoggedInboundEmail\Jobs\ProcessInboundEmailJob;
 use Dcodegroup\LaravelLoggedInboundEmail\Models\InboundEmail;
-use Dcodegroup\LaravelLoggedInboundEmail\Tests\TestCase;
 use Illuminate\Support\Facades\Bus;
 
-class PostmarkInboundWebhookTest extends TestCase
+/**
+ * @return array{body: string, signature: string}
+ */
+function signedPostmarkBody(): array
 {
-    /**
-     * @return array{body: string, signature: string}
-     */
-    private function signedPostmarkBody(): array
-    {
-        $body = json_encode([
-            'From' => 'a@example.com',
-            'To' => 'b@example.com',
-            'Subject' => 'Postmark subject',
-            'TextBody' => 'Plain',
-            'HtmlBody' => '<p>H</p>',
-            'FromFull' => ['Email' => 'a@example.com', 'Name' => 'Alice'],
-            'ToFull' => [['Email' => 'b@example.com', 'Name' => 'Bob']],
-            'Headers' => [],
-            'Attachments' => [],
-            'MessageID' => 'pm-1',
-        ], JSON_THROW_ON_ERROR);
+    $body = json_encode([
+        'From' => 'a@example.com',
+        'To' => 'b@example.com',
+        'Subject' => 'Postmark subject',
+        'TextBody' => 'Plain',
+        'HtmlBody' => '<p>H</p>',
+        'FromFull' => ['Email' => 'a@example.com', 'Name' => 'Alice'],
+        'ToFull' => [['Email' => 'b@example.com', 'Name' => 'Bob']],
+        'Headers' => [],
+        'Attachments' => [],
+        'MessageID' => 'pm-1',
+    ], JSON_THROW_ON_ERROR);
 
-        return [
-            'body' => $body,
-            'signature' => $this->postmarkSignature($body, 'test-postmark-secret'),
-        ];
-    }
-
-    public function test_rejects_when_webhook_secret_not_configured(): void
-    {
-        config(['inbound-email.providers.postmark.webhook_secret' => '']);
-
-        Bus::fake();
-
-        $signed = $this->signedPostmarkBody();
-        $this->call('POST', '/webhooks/inbound/postmark', [], [], [], [
-            'HTTP_X_POSTMARK_SIGNATURE' => $signed['signature'],
-            'CONTENT_TYPE' => 'application/json',
-        ], $signed['body'])->assertForbidden();
-
-        Bus::assertNothingDispatched();
-        $this->assertVerificationFailedRowRecorded();
-    }
-
-    public function test_rejects_invalid_signature(): void
-    {
-        Bus::fake();
-
-        $signed = $this->signedPostmarkBody();
-        $this->call('POST', '/webhooks/inbound/postmark', [], [], [], [
-            'HTTP_X_POSTMARK_SIGNATURE' => 'dGVzdA==',
-            'CONTENT_TYPE' => 'application/json',
-        ], $signed['body'])->assertForbidden();
-
-        Bus::assertNothingDispatched();
-        $this->assertVerificationFailedRowRecorded();
-    }
-
-    private function assertVerificationFailedRowRecorded(): void
-    {
-        self::assertSame(1, InboundEmail::count());
-
-        $inboundEmail = InboundEmail::sole();
-        self::assertSame(InboundEmailStatus::Failed, $inboundEmail->status);
-        self::assertSame('Verification failed', $inboundEmail->error);
-    }
-
-    public function test_dispatches_job_with_addresses_and_bodies(): void
-    {
-        Bus::fake();
-
-        $signed = $this->signedPostmarkBody();
-
-        $this->call('POST', '/webhooks/inbound/postmark', [], [], [], [
-            'HTTP_X_POSTMARK_SIGNATURE' => $signed['signature'],
-            'CONTENT_TYPE' => 'application/json',
-        ], $signed['body'])->assertOk();
-
-        Bus::assertDispatched(ProcessInboundEmailJob::class, function (ProcessInboundEmailJob $job): bool {
-            $m = $job->message;
-
-            return ($m['provider'] ?? null) === 'postmark'
-                && ($m['subject'] ?? null) === 'Postmark subject'
-                && ($m['text'] ?? null) === 'Plain'
-                && ($m['metadata']['postmark_message_id'] ?? null) === 'pm-1';
-        });
-
-        self::assertSame(1, InboundEmail::count());
-
-        $inboundEmail = InboundEmail::sole();
-        self::assertSame(InboundEmailStatus::Received, $inboundEmail->status);
-        self::assertSame($signed['body'], $inboundEmail->payload);
-        self::assertSame('postmark', $inboundEmail->provider);
-        self::assertSame('Postmark subject', $inboundEmail->subject);
-        self::assertSame('Plain', $inboundEmail->text_content);
-        self::assertSame('pm-1', $inboundEmail->message_id);
-    }
+    return [
+        'body' => $body,
+        'signature' => base64_encode(hash_hmac('sha256', $body, 'test-postmark-secret', true)),
+    ];
 }
+
+it('rejects when webhook secret not configured', function (): void {
+    config(['inbound-email.providers.postmark.webhook_secret' => '']);
+
+    Bus::fake();
+
+    $signed = signedPostmarkBody();
+    $this->call('POST', '/webhooks/inbound/postmark', [], [], [], [
+        'HTTP_X_POSTMARK_SIGNATURE' => $signed['signature'],
+        'CONTENT_TYPE' => 'application/json',
+    ], $signed['body'])->assertForbidden();
+
+    Bus::assertNothingDispatched();
+    $this->assertVerificationFailedRowRecorded();
+});
+
+it('rejects invalid signature', function (): void {
+    Bus::fake();
+
+    $signed = signedPostmarkBody();
+    $this->call('POST', '/webhooks/inbound/postmark', [], [], [], [
+        'HTTP_X_POSTMARK_SIGNATURE' => 'dGVzdA==',
+        'CONTENT_TYPE' => 'application/json',
+    ], $signed['body'])->assertForbidden();
+
+    Bus::assertNothingDispatched();
+    $this->assertVerificationFailedRowRecorded();
+});
+
+it('dispatches job with addresses and bodies', function (): void {
+    Bus::fake();
+
+    $signed = signedPostmarkBody();
+
+    $this->call('POST', '/webhooks/inbound/postmark', [], [], [], [
+        'HTTP_X_POSTMARK_SIGNATURE' => $signed['signature'],
+        'CONTENT_TYPE' => 'application/json',
+    ], $signed['body'])->assertOk();
+
+    Bus::assertDispatched(ProcessInboundEmailJob::class, function (ProcessInboundEmailJob $job): bool {
+        $m = $job->message;
+
+        return ($m['provider'] ?? null) === 'postmark'
+            && ($m['subject'] ?? null) === 'Postmark subject'
+            && ($m['text'] ?? null) === 'Plain'
+            && ($m['metadata']['postmark_message_id'] ?? null) === 'pm-1';
+    });
+
+    expect(InboundEmail::count())->toBe(1);
+
+    $inboundEmail = InboundEmail::sole();
+    expect($inboundEmail->status)->toBe(InboundEmailStatus::Received)
+        ->and($inboundEmail->payload)->toBe($signed['body'])
+        ->and($inboundEmail->provider)->toBe('postmark')
+        ->and($inboundEmail->subject)->toBe('Postmark subject')
+        ->and($inboundEmail->text_content)->toBe('Plain')
+        ->and($inboundEmail->message_id)->toBe('pm-1');
+});

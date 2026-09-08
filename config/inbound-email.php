@@ -1,6 +1,7 @@
 <?php
 
 use Dcodegroup\LaravelLoggedInboundEmail\Jobs\ProcessInboundEmailJob;
+use Dcodegroup\LaravelLoggedInboundEmail\Support\EmailAddressTenantResolver;
 
 return [
 
@@ -52,6 +53,33 @@ return [
     |
     */
     'multi_tenant_enabled' => env('INBOUND_EMAIL_MULTI_TENANT_ENABLED', false),
+
+    /*
+    |--------------------------------------------------------------------------
+    | Email-based tenant discovery
+    |--------------------------------------------------------------------------
+    |
+    | Enable identifying the tenant from the recipient address itself. The
+    | package's default strategy is plus-addressing, e.g.
+    | `{tenant_identifier}+{process}@domain`. Unlike organization_in_route,
+    | this is not mutually exclusive with route-based discovery — both may be
+    | enabled at once. When both produce a tenant identifier and they
+    | disagree, the route-derived value wins.
+    |
+    */
+    'email_based_tenancy_enabled' => env('INBOUND_EMAIL_EMAIL_BASED_TENANCY_ENABLED', false),
+
+    /*
+    | Fully-qualified class name of the resolver used to parse the tenant
+    | identifier from the recipient address when email_based_tenancy_enabled
+    | is true. Must implement
+    | Dcodegroup\LaravelLoggedInboundEmail\Contracts\EmailBasedTenantResolver.
+    | Override with your own class to use a different email-based tenancy
+    | scheme (e.g. a lookup table or a different delimiter) instead of the
+    | package's default plus-addressing.
+    |
+    */
+    'tenant_resolver' => env('INBOUND_EMAIL_TENANT_RESOLVER', EmailAddressTenantResolver::class),
 
     /*
     |--------------------------------------------------------------------------
