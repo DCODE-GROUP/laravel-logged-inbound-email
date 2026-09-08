@@ -2,18 +2,18 @@
 
 namespace Dcodegroup\LaravelLoggedInboundEmail\Tests\Unit\Support;
 
-use Dcodegroup\LaravelLoggedInboundEmail\Support\PlusAddressTenantResolver;
+use Dcodegroup\LaravelLoggedInboundEmail\Support\EmailAddressTenantResolver;
 use Dcodegroup\LaravelLoggedInboundEmail\Tests\TestCase;
 
-class PlusAddressTenantResolverTest extends TestCase
+class EmailAddressTenantResolverTest extends TestCase
 {
-    private PlusAddressTenantResolver $resolver;
+    private EmailAddressTenantResolver $resolver;
 
     protected function setUp(): void
     {
         parent::setUp();
 
-        $this->resolver = new PlusAddressTenantResolver;
+        $this->resolver = new EmailAddressTenantResolver;
     }
 
     public function test_extracts_tenant_identifier_before_plus(): void

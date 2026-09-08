@@ -2,6 +2,7 @@
 
 namespace Dcodegroup\LaravelLoggedInboundEmail\Support;
 
+use Dcodegroup\LaravelLoggedInboundEmail\Contracts\EmailBasedTenantResolver;
 use Dcodegroup\LaravelLoggedInboundEmail\Contracts\InboundWebhookHandler;
 use Dcodegroup\LaravelLoggedInboundEmail\Enums\InboundEmailStatus;
 use Dcodegroup\LaravelLoggedInboundEmail\InboundMessage;
@@ -12,6 +13,7 @@ use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
+use RuntimeException;
 use Throwable;
 
 /**
@@ -27,10 +29,6 @@ use Throwable;
  */
 class InboundEmailRecorder
 {
-    public function __construct(
-        private readonly PlusAddressTenantResolver $plusAddressTenantResolver = new PlusAddressTenantResolver,
-    ) {}
-
     /**
      * Create the Pending row, verify the request via the given handler,
      * parse it, and advance the row through Receiving to Received/Failed
@@ -44,7 +42,7 @@ class InboundEmailRecorder
      * The given $organizationAlias should already be resolved by the caller
      * to null unless multi-tenant routing (`organization_in_route`) is
      * enabled and the `{orgAlias}` route segment was present. When null and
-     * plus-addressing is enabled, the tenant identifier is instead parsed
+     * email-based tenancy is enabled, the tenant identifier is instead parsed
      * from the recipient address once the message has been parsed — the
      * route segment always wins when both are present and disagree.
      *
@@ -91,7 +89,7 @@ class InboundEmailRecorder
 
     /**
      * Route-derived alias wins when present; otherwise fall back to
-     * plus-addressing (when enabled) parsed from the recipient address.
+     * email-based tenancy (when enabled) parsed from the recipient address.
      */
     private function resolveTenantAlias(?string $organizationAlias, InboundMessage $message): ?string
     {
@@ -99,11 +97,37 @@ class InboundEmailRecorder
             return $organizationAlias;
         }
 
-        if (! (bool) config('inbound-email.tenant_plus_addressing_enabled', false)) {
+        if (! (bool) config('inbound-email.email_based_tenancy_enabled', false)) {
             return null;
         }
 
-        return $this->plusAddressTenantResolver->resolve($message->to);
+        return $this->emailBasedTenantResolver()->resolve($message->to);
+    }
+
+    /**
+     * Instantiates the class named by config('inbound-email.tenant_resolver'),
+     * defaulting to the package's own EmailAddressTenantResolver. Host apps
+     * override this config to provide their own email-based tenancy scheme.
+     */
+    private function emailBasedTenantResolver(): EmailBasedTenantResolver
+    {
+        $resolverClass = config('inbound-email.tenant_resolver', EmailAddressTenantResolver::class);
+
+        if (! is_string($resolverClass) || ! class_exists($resolverClass)) {
+            throw new RuntimeException(
+                'Config inbound-email.tenant_resolver must be a class-string (FQCN). Set INBOUND_EMAIL_TENANT_RESOLVER or config inbound-email.tenant_resolver.'
+            );
+        }
+
+        if (! in_array(EmailBasedTenantResolver::class, class_implements($resolverClass), true)) {
+            throw new RuntimeException(sprintf(
+                'Class [%s] must implement %s.',
+                $resolverClass,
+                EmailBasedTenantResolver::class
+            ));
+        }
+
+        return app($resolverClass);
     }
 
     private function createPending(Request $request, string $provider, ?string $organizationAlias): InboundEmail

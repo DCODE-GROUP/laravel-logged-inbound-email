@@ -2,11 +2,13 @@
 
 namespace Dcodegroup\LaravelLoggedInboundEmail\Support;
 
+use Dcodegroup\LaravelLoggedInboundEmail\Contracts\EmailBasedTenantResolver;
+
 /**
  * Extracts a tenant identifier from a plus-addressed recipient, e.g.
  * `{tenant_identifier}+{process}@domain`.
  */
-class PlusAddressTenantResolver
+class EmailAddressTenantResolver implements EmailBasedTenantResolver
 {
     /**
      * @param  array<int, array{email: string, name: ?string}>  $recipients

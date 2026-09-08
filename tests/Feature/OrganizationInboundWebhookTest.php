@@ -52,7 +52,7 @@ class OrganizationInboundWebhookTest extends TestCase
 
     public function test_route_alias_wins_over_disagreeing_plus_addressed_recipient(): void
     {
-        config(['inbound-email.tenant_plus_addressing_enabled' => true]);
+        config(['inbound-email.email_based_tenancy_enabled' => true]);
 
         $ts = (string) time();
         $token = 'abc';
