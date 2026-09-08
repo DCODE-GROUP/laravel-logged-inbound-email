@@ -4,6 +4,8 @@ namespace Dcodegroup\LaravelLoggedInboundEmail\Models;
 
 use Dcodegroup\LaravelLoggedInboundEmail\Database\Factories\InboundEmailFactory;
 use Dcodegroup\LaravelLoggedInboundEmail\Enums\InboundEmailStatus;
+use Dcodegroup\LaravelLoggedInboundEmail\Observers\InboundEmailObserver;
+use Illuminate\Database\Eloquent\Attributes\ObservedBy;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -41,6 +43,7 @@ use RuntimeException;
  * @property string|null $processable_type
  * @property Carbon|null $deleted_at
  */
+#[ObservedBy(InboundEmailObserver::class)]
 class InboundEmail extends Model
 {
     /** @use HasFactory<InboundEmailFactory> */
@@ -55,17 +58,6 @@ class InboundEmail extends Model
     protected static function newFactory(): InboundEmailFactory
     {
         return InboundEmailFactory::new();
-    }
-
-    protected static function booted(): void
-    {
-        static::deleting(function (self $inboundEmail): void {
-            if ($inboundEmail->isForceDeleting()) {
-                return;
-            }
-
-            $inboundEmail->attachments->each->delete();
-        });
     }
 
     /**
@@ -141,35 +133,5 @@ class InboundEmail extends Model
     public function processable(): MorphTo
     {
         return $this->morphTo();
-    }
-
-    /**
-     * For the consuming app's own job to call once it starts acting on this
-     * email. Never called by the package itself.
-     */
-    public function markProcessing(): bool
-    {
-        return $this->update(['status' => InboundEmailStatus::Processing]);
-    }
-
-    /**
-     * For the consuming app's own job to call once it has finished acting on
-     * this email successfully. Never called by the package itself.
-     */
-    public function markProcessed(): bool
-    {
-        return $this->update(['status' => InboundEmailStatus::Processed]);
-    }
-
-    /**
-     * For the consuming app's own job to call when its own processing fails.
-     * Never called by the package itself.
-     */
-    public function markFailed(?string $error = null): bool
-    {
-        return $this->update([
-            'status' => InboundEmailStatus::Failed,
-            'error' => $error,
-        ]);
     }
 }
