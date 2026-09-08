@@ -12,7 +12,7 @@ use ZBateson\MailMimeParser\Message;
  * Parses a raw MIME string (headers + body) into the canonical array shape
  * used by InboundMessage, via zbateson/mail-mime-parser.
  */
-final class RawMimeParser
+class RawMimeParser
 {
     /** @var array{email: string, name: ?string}|null */
     public readonly ?array $from;
@@ -38,7 +38,7 @@ final class RawMimeParser
     /** @var array<string, string> */
     public readonly array $headers;
 
-    private function __construct(string $raw)
+    protected function __construct(string $raw)
     {
         $message = Message::from($raw, false);
 
@@ -64,7 +64,7 @@ final class RawMimeParser
     /**
      * @return array{email: string, name: ?string}|null
      */
-    private function firstAddress(IMessage $message): ?array
+    protected function firstAddress(IMessage $message): ?array
     {
         $header = $message->getHeader(HeaderConsts::FROM);
         if (! $header instanceof AddressHeader) {
@@ -82,7 +82,7 @@ final class RawMimeParser
     /**
      * @return array<int, array{email: string, name: ?string}>
      */
-    private function addressList(IMessage $message, string $headerName): array
+    protected function addressList(IMessage $message, string $headerName): array
     {
         $header = $message->getHeader($headerName);
         if (! $header instanceof AddressHeader) {
@@ -98,7 +98,7 @@ final class RawMimeParser
     /**
      * @return array{email: string, name: ?string}
      */
-    private function addressPartToArray(AddressPart $address): array
+    protected function addressPartToArray(AddressPart $address): array
     {
         $name = $address->getName();
 
@@ -108,7 +108,7 @@ final class RawMimeParser
     /**
      * @return array<int, array{filename: string, content_type: ?string, content_base64: string}>
      */
-    private function parseAttachments(IMessage $message): array
+    protected function parseAttachments(IMessage $message): array
     {
         $out = [];
 
@@ -126,7 +126,7 @@ final class RawMimeParser
     /**
      * @return array<string, string>
      */
-    private function parseHeaders(IMessage $message): array
+    protected function parseHeaders(IMessage $message): array
     {
         $out = [];
 
