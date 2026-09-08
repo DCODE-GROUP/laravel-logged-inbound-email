@@ -19,7 +19,7 @@ trait ReadsInboundProviderConfig
             return $merged;
         }
 
-        $base = config("inbound-email.providers.{$provider->value}");
+        $base = config($provider->configKey());
 
         return is_array($base) ? $base : [];
     }

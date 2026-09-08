@@ -67,7 +67,7 @@ class InboundWebhookController extends Controller
      */
     private function mergedProviderConfig(?string $organizationAlias, Provider $provider): array
     {
-        $base = config("inbound-email.providers.{$provider->value}");
+        $base = config($provider->configKey());
         $merged = is_array($base) ? $base : [];
 
         foreach ($this->providerConfigResolver->resolve($organizationAlias, $provider) as $key => $value) {

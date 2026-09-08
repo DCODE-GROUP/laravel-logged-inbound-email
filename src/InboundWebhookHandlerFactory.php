@@ -12,6 +12,10 @@ use Dcodegroup\LaravelLoggedInboundEmail\Handlers\SendGridHandler;
 use Dcodegroup\LaravelLoggedInboundEmail\Handlers\SesSnsHandler;
 use Illuminate\Contracts\Foundation\Application;
 
+/**
+ * Resolves the {@see InboundWebhookHandler} implementation responsible for
+ * parsing and validating webhook payloads for a given inbound email {@see Provider}.
+ */
 class InboundWebhookHandlerFactory
 {
     public function __construct(
