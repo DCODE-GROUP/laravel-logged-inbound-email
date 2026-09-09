@@ -4,6 +4,7 @@ namespace Dcodegroup\LaravelLoggedInboundEmail\Jobs;
 
 use Dcodegroup\LaravelLoggedInboundEmail\Contracts\ProcessesInboundEmail;
 use Dcodegroup\LaravelLoggedInboundEmail\InboundMessage;
+use Dcodegroup\LaravelLoggedInboundEmail\Models\InboundEmail;
 use Illuminate\Bus\Queueable;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
@@ -14,7 +15,7 @@ use Illuminate\Support\Facades\Log;
  * Default no-op handler. Replace via config `inbound-email.job` or by rebinding
  * what `ProcessesInboundEmail` resolves to (must be a class-string of your job).
  */
-final class ProcessInboundEmailJob implements ProcessesInboundEmail
+class ProcessInboundEmailJob implements ProcessesInboundEmail
 {
     use Dispatchable;
     use InteractsWithQueue;
@@ -25,7 +26,7 @@ final class ProcessInboundEmailJob implements ProcessesInboundEmail
      * @param  array<string, mixed>  $message  InboundMessage::toArray()
      */
     public function __construct(
-        public array $message,
+        public InboundEmail $inboundEmail,
         public string $orgAlias = '',
     ) {}
 
