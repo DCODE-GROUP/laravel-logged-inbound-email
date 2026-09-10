@@ -20,11 +20,11 @@ it('accepts request when verification key not configured', function (): void {
     $this->post('/webhooks/inbound/sendgrid', $payload)->assertOk();
 
     Bus::assertDispatched(ProcessInboundEmailJob::class, function (ProcessInboundEmailJob $job): bool {
-        $m = $job->message;
+        $m = $job->inboundEmail;
 
-        return ($m['provider'] ?? null) === 'sendgrid'
-            && ($m['subject'] ?? null) === 'SG subject'
-            && ($m['text'] ?? null) === 'Hello SendGrid';
+        return $m->provider === 'sendgrid'
+            && $m->subject === 'SG subject'
+            && $m->text_content === 'Hello SendGrid';
     });
 
     expect(InboundEmail::count())->toBe(1);
@@ -87,6 +87,6 @@ it('includes raw email in metadata when present', function (): void {
     ])->assertOk();
 
     Bus::assertDispatched(ProcessInboundEmailJob::class, function (ProcessInboundEmailJob $job) use ($raw): bool {
-        return ($job->message['metadata']['raw_email'] ?? null) === $raw;
+        return data_get($job->inboundEmail->metadata,'raw_email') === $raw;
     });
 });

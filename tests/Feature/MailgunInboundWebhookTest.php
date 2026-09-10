@@ -57,9 +57,9 @@ it('dispatches job with normalized payload', function (): void {
         ->assertOk();
 
     Bus::assertDispatched(ProcessInboundEmailJob::class, function (ProcessInboundEmailJob $job): bool {
-        return $job->message['provider'] === 'mailgun'
-            && ($job->message['subject'] ?? null) === 'Hello'
-            && ($job->message['text'] ?? null) === 'Test body';
+        return $job->inboundEmail->provider === 'mailgun'
+            && $job->inboundEmail->subject === 'Hello'
+            && $job->inboundEmail->text_content  === 'Test body';
     });
 
     expect(InboundEmail::count())->toBe(1);

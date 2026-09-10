@@ -143,6 +143,7 @@ class InboundEmailRecorder
     {
         $inboundEmail->update([
             'provider' => $message->provider->value,
+            'metadata' => $message->metadata,
             'from' => $message->from,
             'to' => $message->to,
             'cc' => $message->cc,

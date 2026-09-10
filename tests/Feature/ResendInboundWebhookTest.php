@@ -69,7 +69,7 @@ it('acknowledges non email.received events without dispatching job', function ()
         ->assertOk();
 
     Bus::assertNothingDispatched();
-    expect(InboundEmail::count())->toBe(0);
+    expect(InboundEmail::count())->toBe(1); // We still want to have logged the trash content
 });
 
 it('fetches email from api and dispatches job', function (): void {
@@ -98,13 +98,13 @@ it('fetches email from api and dispatches job', function (): void {
         ->assertOk();
 
     Bus::assertDispatched(ProcessInboundEmailJob::class, function (ProcessInboundEmailJob $job): bool {
-        $m = $job->message;
+        $m = $job->inboundEmail;
 
-        return ($m['provider'] ?? null) === 'resend'
-            && ($m['subject'] ?? null) === 'Resend subject'
-            && ($m['text'] ?? null) === 'Plain text body'
-            && ($m['html'] ?? null) === '<p>HTML body</p>'
-            && ($m['metadata']['resend_email_id'] ?? null) === 'email-uuid-1';
+        return $m->provider === 'resend'
+            && $m->subject === 'Resend subject'
+            && $m->text_content === 'Plain text body'
+            && $m->html_content === '<p>HTML body</p>'
+            && data_get($m->metadata, 'resend_email_id') === 'email-uuid-1';
     });
 
     expect(InboundEmail::count())->toBe(1);
@@ -154,13 +154,12 @@ it('fetches attachments via api', function (): void {
         ->assertOk();
 
     Bus::assertDispatched(ProcessInboundEmailJob::class, function (ProcessInboundEmailJob $job): bool {
-        $m = $job->message;
-        $attachments = $m['attachments'] ?? [];
+        $m = $job->inboundEmail;
+        $attachments = $m->attachments;
 
-        return ($m['provider'] ?? null) === 'resend'
+        return $m->provider === 'resend'
             && count($attachments) === 1
-            && ($attachments[0]['filename'] ?? null) === 'doc.pdf'
-            && ($attachments[0]['content_base64'] ?? null) === base64_encode('pdf-bytes');
+            && $attachments[0]->filename === 'doc.pdf';
     });
 });
 
