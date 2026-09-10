@@ -68,12 +68,14 @@ it('dispatches job with addresses and bodies', function (): void {
     ], $signed['body'])->assertOk();
 
     Bus::assertDispatched(ProcessInboundEmailJob::class, function (ProcessInboundEmailJob $job): bool {
-        $m = $job->message;
+        $m = $job->inboundEmail;
 
-        return ($m['provider'] ?? null) === 'postmark'
-            && ($m['subject'] ?? null) === 'Postmark subject'
-            && ($m['text'] ?? null) === 'Plain'
-            && ($m['metadata']['postmark_message_id'] ?? null) === 'pm-1';
+        $result = $m->provider === 'postmark'
+            && $m->subject === 'Postmark subject'
+            && $m->text_content === 'Plain'
+            && data_get($m->metadata, 'postmark_message_id') === 'pm-1';
+
+        return $result;
     });
 
     expect(InboundEmail::count())->toBe(1);

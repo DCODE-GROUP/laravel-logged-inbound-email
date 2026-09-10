@@ -16,8 +16,8 @@ it('dispatches job with org alias separate from message', function (): void {
 
     Bus::assertDispatched(ProcessInboundEmailJob::class, function (ProcessInboundEmailJob $job): bool {
         return $job->orgAlias === 'acme-corp'
-            && $job->message['provider'] === 'mailgun'
-            && ($job->message['subject'] ?? null) === 'Hello';
+            && $job->inboundEmail->provider === 'mailgun'
+            && $job->inboundEmail->subject === 'Hello';
     });
 
     $inboundEmail = InboundEmail::sole();

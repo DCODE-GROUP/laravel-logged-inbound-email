@@ -56,8 +56,7 @@ it('does not dispatch a job for a subscription confirmation', function (): void 
     $this->postJson('/webhooks/inbound/ses', $payload)->assertOk();
 
     Bus::assertNothingDispatched();
-    expect(InboundEmail::count())->toBe(0)
-        ->and(InboundEmail::withTrashed()->get())->toHaveCount(0);
+    expect(InboundEmail::count())->toBe(1);
 });
 
 it('marks the row failed when the inner json is malformed', function (): void {
@@ -93,11 +92,11 @@ it('dispatches a job for a notification with base64 content', function (): void 
     $this->postJson('/webhooks/inbound/ses', $envelope)->assertOk();
 
     Bus::assertDispatched(ProcessInboundEmailJob::class, function (ProcessInboundEmailJob $job): bool {
-        $m = $job->message;
+        $m = $job->inboundEmail;
 
-        return ($m['provider'] ?? null) === 'ses'
-            && ($m['metadata']['ses_message_id'] ?? null) === 'ses-message-id-99'
-            && str_contains((string) ($m['text'] ?? ''), 'Hello SES');
+        return $m->provider === 'ses'
+            && data_get($m->metadata, 'ses_message_id') === 'ses-message-id-99'
+            && str_contains($m->text_content, 'Hello SES');
     });
 
     expect(InboundEmail::count())->toBe(1);
@@ -138,10 +137,10 @@ it('loads raw mime from the configured disk for an s3 action', function (): void
     $this->postJson('/webhooks/inbound/ses', sesNotificationEnvelope($inner))->assertOk();
 
     Bus::assertDispatched(ProcessInboundEmailJob::class, function (ProcessInboundEmailJob $job): bool {
-        $m = $job->message;
+        $m = $job->inboundEmail;
 
-        return ($m['provider'] ?? null) === 'ses'
-            && ($m['metadata']['ses_message_id'] ?? null) === 'ses-s3-1'
-            && str_contains((string) ($m['text'] ?? ''), 'S3 body');
+        return $m->provider === 'ses'
+            && data_get($m->metadata, 'ses_message_id') === 'ses-s3-1'
+            && str_contains($m->text_content, 'S3 body');
     });
 });

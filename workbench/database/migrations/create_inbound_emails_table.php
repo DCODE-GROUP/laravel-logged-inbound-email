@@ -19,6 +19,7 @@ return new class extends Migration
             $table->json('cc')->nullable();
             $table->json('bcc')->nullable();
             $table->json('reply_to')->nullable();
+            $table->json('metadata')->nullable();
             $table->string('subject')->nullable();
             $table->longText('text_content')->nullable();
             $table->longText('html_content')->nullable();

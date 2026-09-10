@@ -8,6 +8,7 @@ use Dcodegroup\LaravelLoggedInboundEmail\Contracts\ProcessesInboundEmail;
 use Dcodegroup\LaravelLoggedInboundEmail\Enums\Provider;
 use Dcodegroup\LaravelLoggedInboundEmail\InboundWebhookHandlerFactory;
 use Dcodegroup\LaravelLoggedInboundEmail\Jobs\ProcessInboundEmailJob;
+use Dcodegroup\LaravelLoggedInboundEmail\Models\InboundEmail;
 use Dcodegroup\LaravelLoggedInboundEmail\Support\InboundEmailRecorder;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Http\Request;
@@ -53,10 +54,10 @@ class InboundWebhookController extends Controller
         $organizationInRoute = (bool) config('inbound-email.organization_in_route', false);
         $organizationAlias = $organizationInRoute ? $orgForPolicy : null;
 
-        $message = $this->recorder->record($request, $providerEnum, $handler, $organizationAlias);
+        $inboundEmailModel = $this->recorder->record($request, $providerEnum, $handler, $organizationAlias);
 
-        if ($message !== null) {
-            $this->dispatchInboundEmailJob($message->toArray(), $orgAlias);
+        if ($inboundEmailModel !== null) {
+            $this->dispatchInboundEmailJob($inboundEmailModel, $orgAlias);
         }
 
         return response('OK', Response::HTTP_OK);
@@ -79,10 +80,7 @@ class InboundWebhookController extends Controller
         return $merged;
     }
 
-    /**
-     * @param  array<string, mixed>  $payload
-     */
-    private function dispatchInboundEmailJob(array $payload, string $orgAlias): void
+    private function dispatchInboundEmailJob(InboundEmail $inboundEmailModel, string $orgAlias): void
     {
         $jobClass = config('inbound-email.job', ProcessInboundEmailJob::class);
 
@@ -114,8 +112,8 @@ class InboundWebhookController extends Controller
 
         $passOrg = (bool) config('inbound-email.organization_in_route', false);
         $pending = $passOrg
-            ? $jobClass::dispatch($payload, $orgAlias)
-            : $jobClass::dispatch($payload);
+            ? $jobClass::dispatch($inboundEmailModel, $orgAlias)
+            : $jobClass::dispatch($inboundEmailModel);
 
         $connection = config('inbound-email.queue_connection');
         if (is_string($connection) && $connection !== '') {

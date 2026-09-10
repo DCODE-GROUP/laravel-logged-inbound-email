@@ -49,7 +49,7 @@ class InboundEmailRecorder
      *
      * @throws Throwable re-thrown after marking the row Failed
      */
-    public function record(Request $request, Provider $provider, InboundWebhookHandler $handler, ?string $organizationAlias = null): ?InboundMessage
+    public function record(Request $request, Provider $provider, InboundWebhookHandler $handler, ?string $organizationAlias = null): ?InboundEmail
     {
         $inboundEmail = $this->createPending($request, $provider, $organizationAlias);
 
@@ -78,14 +78,12 @@ class InboundEmailRecorder
         }
 
         if ($message === null) {
-            $inboundEmail->forceDelete();
-
             return null;
         }
 
         $this->markReceived($inboundEmail, $message, $this->resolveTenantAlias($organizationAlias, $message));
 
-        return $message;
+        return $inboundEmail;
     }
 
     /**
@@ -145,6 +143,7 @@ class InboundEmailRecorder
     {
         $inboundEmail->update([
             'provider' => $message->provider->value,
+            'metadata' => $message->metadata,
             'from' => $message->from,
             'to' => $message->to,
             'cc' => $message->cc,

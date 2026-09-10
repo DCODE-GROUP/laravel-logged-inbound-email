@@ -57,12 +57,12 @@ it('fetches message from api and dispatches job', function (): void {
     $this->postJson('/webhooks/inbound/mailpit', ['ID' => 'mp-1'])->assertOk();
 
     Bus::assertDispatched(ProcessInboundEmailJob::class, function (ProcessInboundEmailJob $job): bool {
-        $m = $job->message;
+        $m = $job->inboundEmail;
 
-        return ($m['provider'] ?? null) === 'mailpit'
-            && ($m['subject'] ?? null) === 'Mailpit subject'
-            && ($m['text'] ?? null) === 'Plain text'
-            && ($m['metadata']['mailpit_id'] ?? null) === 'mp-1';
+        return $m->provider === 'mailpit'
+            && $m->subject === 'Mailpit subject'
+            && $m->text_content === 'Plain text'
+            && data_get($m->metadata, 'mailpit_id') === 'mp-1';
     });
 
     expect(InboundEmail::count())->toBe(1);
