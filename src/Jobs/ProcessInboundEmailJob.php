@@ -3,7 +3,6 @@
 namespace Dcodegroup\LaravelLoggedInboundEmail\Jobs;
 
 use Dcodegroup\LaravelLoggedInboundEmail\Contracts\ProcessesInboundEmail;
-use Dcodegroup\LaravelLoggedInboundEmail\InboundMessage;
 use Dcodegroup\LaravelLoggedInboundEmail\Models\InboundEmail;
 use Illuminate\Bus\Queueable;
 use Illuminate\Foundation\Bus\Dispatchable;
