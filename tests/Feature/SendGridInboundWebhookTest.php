@@ -87,6 +87,6 @@ it('includes raw email in metadata when present', function (): void {
     ])->assertOk();
 
     Bus::assertDispatched(ProcessInboundEmailJob::class, function (ProcessInboundEmailJob $job) use ($raw): bool {
-        return data_get($job->inboundEmail->metadata,'raw_email') === $raw;
+        return data_get($job->inboundEmail->metadata, 'raw_email') === $raw;
     });
 });

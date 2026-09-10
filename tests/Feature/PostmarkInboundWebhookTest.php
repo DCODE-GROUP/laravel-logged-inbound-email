@@ -71,9 +71,10 @@ it('dispatches job with addresses and bodies', function (): void {
         $m = $job->inboundEmail;
 
         $result = $m->provider === 'postmark'
-            && $m->subject  === 'Postmark subject'
-            && $m->text_content  === 'Plain'
+            && $m->subject === 'Postmark subject'
+            && $m->text_content === 'Plain'
             && data_get($m->metadata, 'postmark_message_id') === 'pm-1';
+
         return $result;
     });
 
