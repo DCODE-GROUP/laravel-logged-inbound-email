@@ -28,7 +28,7 @@ use RuntimeException;
  * @property array<int, array{email: string, name: ?string}> $cc
  * @property array<int, array{email: string, name: ?string}> $bcc
  * @property array{email: string, name: ?string}|null $reply_to
- * @property array|null $metadata
+ * @property array{string, mixed}|null $metadata
  * @property string|null $subject
  * @property string|null $text_content
  * @property string|null $html_content
