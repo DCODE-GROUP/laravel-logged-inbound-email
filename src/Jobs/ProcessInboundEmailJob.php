@@ -22,9 +22,6 @@ class ProcessInboundEmailJob implements ProcessesInboundEmail
     use Queueable;
     use SerializesModels;
 
-    /**
-     * @param  array<string, mixed>  $message  InboundMessage::toArray()
-     */
     public function __construct(
         public InboundEmail $inboundEmail,
         public string $orgAlias = '',
@@ -32,12 +29,10 @@ class ProcessInboundEmailJob implements ProcessesInboundEmail
 
     public function handle(): void
     {
-        $inbound = InboundMessage::fromArray($this->message);
-
         Log::debug('Inbound email received (set config inbound-email.job or bind ProcessesInboundEmail to your job class-string).', [
-            'provider' => $inbound->provider->value,
-            'subject' => $inbound->subject,
-            'org_alias' => $this->orgAlias !== '' ? $this->orgAlias : null,
+            'provider' => $this->inboundEmail->provider,
+            'subject' => $this->inboundEmail->subject,
+            'org_alias' => $this->inboundEmail->organization_alias,
         ]);
     }
 }

@@ -80,10 +80,6 @@ class InboundWebhookController extends Controller
         return $merged;
     }
 
-    /**
-     * @param InboundEmail  $inboundEmailModel
-     * @param string $orgAlias
-     */
     private function dispatchInboundEmailJob(InboundEmail $inboundEmailModel, string $orgAlias): void
     {
         $jobClass = config('inbound-email.job', ProcessInboundEmailJob::class);
